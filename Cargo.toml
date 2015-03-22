@@ -1,0 +1,22 @@
+[package]
+
+name = "resolve"
+description = "DNS communication protocol"
+
+documentation = "http://murarth.github.io/resolve/resolve/index.html"
+homepage = "https://github.com/murarth/resolve"
+repository = "https://github.com/murarth/resolve"
+
+keywords = [ "dns", "host", "resolver" ]
+license = "MIT/Apache-2.0"
+readme = "README.md"
+
+version = "0.0.1"
+authors = ["Murarth <murarth@gmail.com>"]
+
+[dependencies]
+log = "*"
+rand = "*"
+
+[dependencies.mio]
+git = "https://github.com/carllerche/mio"
