@@ -18,8 +18,8 @@ Windows. Therefore, `resolve` does not currently support Windows.
 Add this to your `Cargo.toml`:
 
 ```toml
-[dependencies]
-resolve = "*"
+[dependencies.resolve]
+git = "https://github.com/murarth/resolve"
 ```
 
 And this to your crate root:
