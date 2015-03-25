@@ -15,7 +15,6 @@ version = "0.0.1"
 authors = ["Murarth <murarth@gmail.com>"]
 
 [dependencies]
-log = "*"
 rand = "*"
 
 [dependencies.mio]

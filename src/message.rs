@@ -176,7 +176,6 @@ impl<'a> MsgReader<'a> {
                 self.data.set_position(offset);
                 continue;
             } else if len & 0b11000000 != 0 {
-                error!("invalid label length: {:#x}", len);
                 return Err(DecodeError::InvalidMessage);
             }
 

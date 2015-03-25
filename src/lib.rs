@@ -4,7 +4,6 @@
 #![feature(collections, core, io, io_ext, libc, str_words)]
 
 extern crate libc;
-#[macro_use] extern crate log;
 extern crate mio;
 extern crate rand;
 
