@@ -59,7 +59,7 @@ pub fn address_name(addr: &IpAddr) -> String {
 }
 
 /// Signals an error in parsing an `IpAddr`.
-#[derive(Copy, Clone, Debug)]
+#[derive(Copy, Clone, Debug, Eq, PartialEq)]
 pub struct ParseError;
 
 impl FromStr for IpAddr {

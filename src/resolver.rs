@@ -75,32 +75,43 @@ impl DnsResolver {
             out_msg.question.push(Question::new(
                 host.to_string(), RecordType::A, Class::Internet));
 
+            let mut err = None;
             let mut res = Vec::new();
 
-            if let Ok(msg) = self.get_response(&out_msg) {
-                for rr in msg.into_records() {
-                    if rr.r_type == RecordType::A {
-                        let a = try!(rr.read_rdata::<A>());
-                        res.push(IpAddr::V4(a.address));
+            match self.get_response(&out_msg) {
+                Ok(msg) => {
+                    for rr in msg.into_records() {
+                        if rr.r_type == RecordType::A {
+                            let a = try!(rr.read_rdata::<A>());
+                            res.push(IpAddr::V4(a.address));
+                        }
                     }
                 }
+                Err(e) => err = Some(e),
             }
 
             // Then, an IPv6 request
             out_msg.question[0].q_type = RecordType::AAAA;
 
-            if let Ok(msg) = self.get_response(&out_msg) {
-                for rr in msg.into_records() {
-                    if rr.r_type == RecordType::AAAA {
-                        let aaaa = try!(rr.read_rdata::<AAAA>());
-                        res.push(IpAddr::V6(aaaa.address));
+            match self.get_response(&out_msg) {
+                Ok(msg) => {
+                    for rr in msg.into_records() {
+                        if rr.r_type == RecordType::AAAA {
+                            let aaaa = try!(rr.read_rdata::<AAAA>());
+                            res.push(IpAddr::V6(aaaa.address));
+                        }
                     }
                 }
+                Err(e) => err = Some(e),
             }
 
             if res.is_empty() {
-                Err(Error::IoError(io::Error::new(io::ErrorKind::Other,
-                    "failed to resolve host", Some("name not found".to_string()))))
+                if let Some(e) = err {
+                    Err(e)
+                } else {
+                    Err(Error::IoError(io::Error::new(io::ErrorKind::Other,
+                        "failed to resolve host", Some("name not found".to_string()))))
+                }
             } else {
                 Ok(ResolveHost(res.into_iter()))
             }

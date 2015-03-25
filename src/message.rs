@@ -1,5 +1,6 @@
 //! Utilities for composing, decoding, and encoding messages.
 
+use std::ascii::AsciiExt;
 use std::cell::Cell;
 use std::default::Default;
 use std::fmt;
@@ -7,10 +8,12 @@ use std::io::{Cursor, Read, Write};
 use std::mem::{transmute, zeroed};
 use std::num::ToPrimitive;
 use std::slice::Iter;
+use std::str::from_utf8_unchecked;
 use std::vec::IntoIter;
 
 use rand::random;
 
+use idna;
 use record::{Class, Record, RecordType};
 
 /// Maximum size of a DNS message, in bytes.
@@ -136,79 +139,93 @@ impl<'a> MsgReader<'a> {
 
     /// Reads a name from the message.
     pub fn read_name(&mut self) -> Result<String, DecodeError> {
-        let mut buf = Vec::with_capacity(255);
+        // Start position, used to check against pointer references
+        let start_pos = self.data.position();
+        // Offset to return to if we've finished parsing a pointer reference
+        let mut restore = None;
+
+        let mut res = String::new();
+        let mut total_read = 0;
 
         loop {
             let len = try!(self.read_byte());
 
             if len == 0 {
+                if total_read + 1 > NAME_LIMIT {
+                    return Err(DecodeError::InvalidName);
+                }
                 break;
             }
 
             if len & 0b11000000 == 0b11000000 {
                 // The beginning of a pointer reference
-                let lo = try!(self.read_byte()) as usize;
-                let offset = (((len & 0b00111111) as usize) << 8) | lo;
-                try!(self.read_pointer(&mut buf, offset));
-                break;
+                let hi = (len & 0b00111111) as u64;
+                let lo = try!(self.read_byte()) as u64;
+                let offset = (hi << 8) | lo;
+
+                // To prevent an infinite loop, we require the pointer to
+                // point before the start of this name.
+                if offset >= start_pos {
+                    return Err(DecodeError::InvalidName);
+                }
+
+                if restore.is_none() {
+                    restore = Some(self.data.position());
+                }
+
+                self.data.set_position(offset);
+                continue;
             } else if len & 0b11000000 != 0 {
                 error!("invalid label length: {:#x}", len);
                 return Err(DecodeError::InvalidMessage);
             }
 
-            if buf.len() + 1 + len as usize > NAME_LIMIT {
-                return Err(DecodeError::InvalidMessage);
+            if total_read + 1 + len as usize > NAME_LIMIT {
+                return Err(DecodeError::InvalidName);
             }
+            total_read += 1 + len as usize;
 
-            try!(self.read_into(&mut buf, len as usize));
-            buf.push(b'.');
+            try!(self.read_segment(&mut res, len as usize));
         }
 
-        if buf.is_empty() {
-            return Ok(".".to_string());
+        if res.is_empty() {
+            res.push('.');
+        } else {
+            res.shrink_to_fit();
         }
 
-        match String::from_utf8(buf) {
-            Ok(mut s) => { s.shrink_to_fit();  Ok(s) },
-            Err(_) => Err(DecodeError::InvalidName)
+        if let Some(pos) = restore {
+            self.data.set_position(pos);
         }
+
+        Ok(res)
     }
 
-    /// Reads a name into `buf` as a pointer reference starting at `offset`.
-    fn read_pointer(&mut self, buf: &mut Vec<u8>, offset: usize)
-            -> Result<(), DecodeError> {
-        if offset >= self.data.get_ref().len() {
-            return Err(DecodeError::InvalidMessage);
-        }
-        let old_off = self.data.position();
-        self.data.set_position(offset as u64);
+    fn read_segment(&mut self, buf: &mut String, len: usize) -> Result<(), DecodeError> {
+        let mut bytes = [0; 64];
 
-        loop {
-            let len = try!(self.read_byte());
+        try!(self.read(&mut bytes[..len]));
 
-            if len == 0 {
-                break;
-            }
+        let seg = &bytes[..len];
 
-            if len & 0b11000000 == 0b11000000 {
-                error!("pointer reference {:#x} within pointer reference {:#x}",
-                    len, offset);
-                return Err(DecodeError::InvalidMessage);
-            } else if len & 0b11000000 != 0 {
-                error!("invalid label length: {:#x}", len);
-                return Err(DecodeError::InvalidMessage);
-            }
-
-            if buf.len() + 1 + len as usize > NAME_LIMIT {
-                return Err(DecodeError::InvalidMessage);
-            }
-
-            try!(self.read_into(buf, len as usize));
-            buf.push(b'.');
+        if !seg.is_ascii() {
+            return Err(DecodeError::InvalidName);
         }
 
-        self.data.set_position(old_off);
+        // We just verified this was ASCII, so it's safe.
+        let s = unsafe { from_utf8_unchecked(seg) };
 
+        if !is_valid_segment(s) {
+            return Err(DecodeError::InvalidName);
+        }
+
+        let label = match idna::to_unicode(s) {
+            Ok(s) => s,
+            Err(_) => return Err(DecodeError::InvalidName)
+        };
+
+        buf.push_str(&label);
+        buf.push('.');
         Ok(())
     }
 
@@ -361,8 +378,26 @@ impl<'a> MsgWriter<'a> {
         } else if name == "." {
             self.write_byte(0)
         } else {
+            let mut total_len = 0;
+
             for seg in name.split('.') {
+                let seg = match idna::to_ascii(seg) {
+                    Ok(seg) => seg,
+                    Err(_) => return Err(EncodeError::InvalidName)
+                };
+
+                if !is_valid_segment(&seg) {
+                    return Err(EncodeError::InvalidName);
+                }
+
                 if seg.len() > LABEL_LIMIT {
+                    return Err(EncodeError::InvalidName);
+                }
+
+                // Add the size octet and the segment length
+                total_len += 1 + seg.len();
+
+                if total_len > NAME_LIMIT {
                     return Err(EncodeError::InvalidName);
                 }
 
@@ -371,6 +406,9 @@ impl<'a> MsgWriter<'a> {
             }
 
             if !name.ends_with('.') {
+                if total_len + 1 > NAME_LIMIT {
+                    return Err(EncodeError::InvalidName);
+                }
                 try!(self.write_byte(0));
             }
 
@@ -475,31 +513,20 @@ pub fn generate_id() -> u16 {
 }
 
 /// Returns whether the given string appears to be a valid hostname.
-/// This function DOES NOT check label length, as that is checked during
-/// decode/encode operations.
+/// The contents of the name (i.e. characters in labels) are not checked here;
+/// only the structure of the name is validated.
 fn is_valid_name(name: &str) -> bool {
     let len = name.len();
-    len != 0 &&
-        (len == 1 || !name.starts_with('.')) &&
-        !name.contains("..") &&
-        // Account for length octets
-        // Name  foo.com
-        // or    foo.com.
-        // is   NfooNcomN
-        // where "N" is a length octet.
-        if name.ends_with('.') {
-            len <= NAME_LIMIT - 1
-        } else {
-            len <= NAME_LIMIT - 2
-        } &&
-        name.bytes().all(|c| is_valid_name_char(c))
+    len != 0 && (len == 1 || !name.starts_with('.')) && !name.contains("..")
 }
 
-fn is_valid_name_char(ch: u8) -> bool {
-    match ch {
-        b'a' ... b'z' | b'A' ... b'Z' | b'0' ... b'9' | b'-' | b'.' => true,
-        _ => false
-    }
+/// Returns whether the given string constitutes a valid name segment.
+/// This check is not as strict as internet DNS servers will be. It only checks
+/// for basic sanity of input. If an invalid name is given, a DNS server will
+/// respond that it doesn't exist, anyway.
+fn is_valid_segment(s: &str) -> bool {
+    !(s.starts_with('-') || s.ends_with('-')) &&
+        s.chars().all(|c| !(c.is_whitespace() || c.is_control()))
 }
 
 /// Represents a DNS message.
@@ -993,6 +1020,27 @@ mod test {
     use record::{Class, RecordType};
 
     #[test]
+    fn test_idna_name() {
+        let mut buf = [0; 64];
+        let mut w = MsgWriter::new(&mut buf);
+
+        w.write_name("bücher.de.").unwrap();
+        w.write_name("ουτοπία.δπθ.gr.").unwrap();
+
+        let bytes = w.into_bytes();
+
+        assert_eq!(bytes, &b"\
+            \x0dxn--bcher-kva\x02de\x00\
+            \x0exn--kxae4bafwg\x09xn--pxaix\x02gr\x00\
+            "[..]);
+
+        let mut r = MsgReader::new(&bytes);
+
+        assert_eq!(r.read_name().as_ref().map(|s| &s[..]), Ok("bücher.de."));
+        assert_eq!(r.read_name().as_ref().map(|s| &s[..]), Ok("ουτοπία.δπθ.gr."));
+    }
+
+    #[test]
     fn test_message() {
         let msg = Message{
             header: Header{
@@ -1128,13 +1176,9 @@ mod test {
         assert!(is_valid_name("foo.com."));
         assert!(is_valid_name("foo-123.com."));
         assert!(is_valid_name("FOO-BAR.COM"));
-        assert!(is_valid_name(LONGEST_NAME));
-        assert!(is_valid_name(LONGEST_NAME_DOT));
 
         assert!(!is_valid_name(""));
         assert!(!is_valid_name(".foo.com"));
         assert!(!is_valid_name("foo..bar.com"));
-        assert!(!is_valid_name(TOO_LONG_NAME));
-        assert!(!is_valid_name(TOO_LONG_NAME_DOT));
     }
 }
