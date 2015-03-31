@@ -1,34 +1,27 @@
-//! IP address types
+//! IP address utility functions
 
-use std::fmt;
-use std::net::{Ipv4Addr, Ipv6Addr, SocketAddr, SocketAddrV4, SocketAddrV6};
-use std::str::FromStr;
+use std::net::{IpAddr, SocketAddr};
 
-/// Representation of an IPv4 or IPv6 address
-#[derive(Copy, Clone, Debug, Hash, Eq, PartialEq, Ord, PartialOrd)]
-pub enum IpAddr {
-    /// An IPv4 address
-    V4(Ipv4Addr),
-    /// An IPv6 address
-    V6(Ipv6Addr),
-}
-
-impl IpAddr {
-    pub fn to_socket_addr(&self, port: u16) -> SocketAddr {
-        match *self {
-            IpAddr::V4(addr) => SocketAddr::V4(SocketAddrV4::new(addr, port)),
-            IpAddr::V6(addr) => SocketAddr::V6(SocketAddrV6::new(addr, port, 0, 0)),
+/// Compares two `IpAddr`s, checking for IPv6-compatible or IPv6-mapped addresses.
+pub fn address_equal(a: &IpAddr, b: &IpAddr) -> bool {
+    match (*a, *b) {
+        // Simple comparisons; (V4 == V4) or (V6 == V6)
+        (IpAddr::V4(ref a), IpAddr::V4(ref b)) => a == b,
+        (IpAddr::V6(ref a), IpAddr::V6(ref b)) => a == b,
+        // Not-so-simple comparison; V4 == maybe-V6-wrapped-V4
+        (IpAddr::V6(ref a), IpAddr::V4(ref b)) => {
+            match a.to_ipv4() {
+                Some(ref a4) => a4 == b,
+                None => false
+            }
         }
+        (IpAddr::V4(..), IpAddr::V6(..)) => address_equal(b, a),
     }
 }
 
-impl fmt::Display for IpAddr {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        match *self {
-            IpAddr::V4(ref addr) => fmt::Display::fmt(addr, f),
-            IpAddr::V6(ref addr) => fmt::Display::fmt(addr, f),
-        }
-    }
+/// Compares two `SocketAddr`s, checking for IPv6-compatible or IPv6-mapped addresses.
+pub fn socket_address_equal(a: &SocketAddr, b: &SocketAddr) -> bool {
+    a.port() == b.port() && address_equal(&a.ip(), &b.ip())
 }
 
 /// Returns an IP address formatted as a domain name.
@@ -58,34 +51,20 @@ pub fn address_name(addr: &IpAddr) -> String {
     }
 }
 
-/// Signals an error in parsing an `IpAddr`.
-#[derive(Copy, Clone, Debug, Eq, PartialEq)]
-pub struct ParseError;
-
-impl FromStr for IpAddr {
-    type Err = ParseError;
-
-    fn from_str(s: &str) -> Result<IpAddr, ParseError> {
-        s.parse::<Ipv4Addr>().map(|ip| IpAddr::V4(ip))
-            .or_else(|_| s.parse::<Ipv6Addr>().map(|ip| IpAddr::V6(ip)))
-            .map_err(|_| ParseError)
-    }
-}
-
 #[cfg(test)]
 mod test {
-    use std::net::{Ipv4Addr, Ipv6Addr};
-    use super::{address_name, IpAddr};
+    use std::net::{IpAddr, Ipv4Addr, Ipv6Addr};
+    use super::{address_equal, address_name};
 
     #[test]
-    fn test_ip_addr() {
-        assert_eq!("127.0.0.1".parse::<IpAddr>().unwrap(),
-            IpAddr::V4(Ipv4Addr::new(127, 0, 0, 1)));
-        assert_eq!("::1".parse::<IpAddr>().unwrap(),
-            IpAddr::V6(Ipv6Addr::new(0, 0, 0, 0, 0, 0, 0, 1)));
+    fn test_address_equal() {
+        let ip = Ipv4Addr::new(1, 2, 3, 4);
+        let a = IpAddr::V4(ip);
 
-        assert_eq!("127.0.0.1", IpAddr::V4(Ipv4Addr::new(127, 0, 0, 1)).to_string());
-        assert_eq!("::1", IpAddr::V6(Ipv6Addr::new(0, 0, 0, 0, 0, 0, 0, 1)).to_string());
+        assert!(address_equal(&a, &IpAddr::V6(ip.to_ipv6_compatible())));
+        assert!(address_equal(&a, &IpAddr::V6(ip.to_ipv6_mapped())));
+        assert!(!address_equal(&a, &IpAddr::V6(
+            Ipv6Addr::new(1, 0, 0, 0, 0, 0, 0x0102, 0x0304))));
     }
 
     #[test]

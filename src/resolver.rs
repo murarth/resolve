@@ -2,12 +2,12 @@
 
 use std::default::Default;
 use std::io;
-use std::net::{SocketAddr, ToSocketAddrs};
+use std::net::{IpAddr, SocketAddr, ToSocketAddrs};
 use std::vec::IntoIter;
 
 use mio::{Evented, Poll, Token, Interest, PollOpt};
 
-use address::{address_name, IpAddr};
+use address::address_name;
 use message::{Message, Qr, Question};
 use record::{A, AAAA, Class, Ptr, RecordType};
 use socket::{DnsSocket, Error};
@@ -159,7 +159,7 @@ fn convert_error<T, F>(desc: &'static str, f: F) -> io::Result<T>
 }
 
 #[cfg(unix)]
-fn default_config() -> io::Result<DnsConfig> {
+pub fn default_config() -> io::Result<DnsConfig> {
     use resolv_conf::load;
     load()
 }

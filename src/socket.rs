@@ -8,6 +8,7 @@ use std::os::unix::io::{AsRawFd, Fd};
 
 use mio::Evented;
 
+use address::socket_address_equal;
 use message::{DecodeError, DnsError, EncodeError, Message, MESSAGE_LIMIT};
 
 /// Represents a socket transmitting DNS messages.
@@ -50,7 +51,7 @@ impl DnsSocket {
     pub fn recv_message(&mut self, addr: &SocketAddr) -> Result<Option<Message>, Error> {
         let mut buf = [0; MESSAGE_LIMIT];
         let (n, recv_addr) = try!(self.sock.recv_from(&mut buf));
-        if !addresses_match(&recv_addr, addr) {
+        if !socket_address_equal(&recv_addr, addr) {
             return Ok(None);
         }
         Ok(Some(try!(Message::decode(&buf[..n]))))
@@ -98,23 +99,6 @@ impl FromError<DnsError> for Error {
 impl FromError<io::Error> for Error {
     fn from_error(err: io::Error) -> Error {
         Error::IoError(err)
-    }
-}
-
-/// Compares two `SocketAddr`s, checking for IPv4-in-IPv6 addresses
-fn addresses_match(a: &SocketAddr, b: &SocketAddr) -> bool {
-    match (*a, *b) {
-        // Simple comparisons; (V4 == V4) or (V6 == V6)
-        (SocketAddr::V4(ref a), SocketAddr::V4(ref b)) => a == b,
-        (SocketAddr::V6(ref a), SocketAddr::V6(ref b)) => a == b,
-        // Not-so-simple comparison; V4 == maybe-V6-wrapped-V4
-        (SocketAddr::V6(ref a), SocketAddr::V4(ref b)) => {
-            match a.ip().to_ipv4() {
-                Some(ref a4) => a4 == b.ip() && a.port() == b.port(),
-                None => false
-            }
-        }
-        (SocketAddr::V4(..), SocketAddr::V6(..)) => addresses_match(b, a),
     }
 }
 

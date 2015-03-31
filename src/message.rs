@@ -353,9 +353,9 @@ impl<'a> MsgWriter<'a> {
 
     /// Returns a subslice of the wrapped byte slice that contains only the
     /// bytes written.
-    pub fn into_bytes(self) -> &'a mut [u8] {
+    pub fn into_bytes(self) -> &'a [u8] {
         let n = self.written();
-        &mut self.data.into_inner()[..n]
+        &self.data.into_inner()[..n]
     }
 
     /// Writes a series of bytes to the message. Returns `Err(TooLong)` if the
@@ -597,7 +597,7 @@ impl Message {
 
     /// Encodes a message to a series of bytes. On success, returns a subslice
     /// of the given buffer containing only the encoded message bytes.
-    pub fn encode<'a>(&self, buf: &'a mut [u8]) -> Result<&'a mut [u8], EncodeError> {
+    pub fn encode<'a>(&self, buf: &'a mut [u8]) -> Result<&'a [u8], EncodeError> {
         let mut w = MsgWriter::new(buf);
         let hdr = &self.header;
 

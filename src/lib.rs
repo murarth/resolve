@@ -1,13 +1,14 @@
 //! Domain Name System (DNS) communication protocol.
 
 #![crate_name = "resolve"]
-#![feature(collections, core, io, io_ext, libc, str_words)]
+#![feature(collections, core, io, io_ext, ip_addr, libc, str_words)]
+#![feature(slice_patterns)]
 
 extern crate libc;
 extern crate mio;
 extern crate rand;
 
-pub use address::IpAddr;
+pub use address::address_name;
 pub use idna::{host_to_ascii, host_to_unicode};
 pub use message::{DecodeError, EncodeError, Message, Question, Resource};
 pub use record::{Class, Record, RecordType};

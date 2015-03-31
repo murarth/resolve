@@ -3,8 +3,8 @@
 use std::default::Default;
 use std::fs::File;
 use std::io::{self, BufRead, BufReader};
+use std::net::{IpAddr, SocketAddr};
 
-use address::IpAddr;
 use resolver::DnsConfig;
 
 /// port for DNS communication
@@ -32,7 +32,7 @@ pub fn load() -> io::Result<DnsConfig> {
             ["nameserver", name, ..] => {
                 if cfg.name_servers.len() < MAX_NAME_SERVERS {
                     if let Ok(ip) = name.parse::<IpAddr>() {
-                        cfg.name_servers.push(ip.to_socket_addr(DNS_PORT))
+                        cfg.name_servers.push(SocketAddr::new(ip, DNS_PORT))
                     }
                 }
             }
