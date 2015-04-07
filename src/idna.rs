@@ -6,7 +6,6 @@ use std::borrow::Cow;
 use std::borrow::Cow::*;
 use std::char::from_u32;
 use std::iter::AdditiveIterator;
-use std::num::Int;
 
 /// Indicates an error in encoding or decoding Punycode data
 #[derive(Copy, Clone, Debug, Eq, PartialEq)]

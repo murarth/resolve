@@ -1,10 +1,9 @@
 //! Low-level UDP socket operations
 
-use std::error::FromError;
 use std::fmt;
 use std::io;
 use std::net::{SocketAddr, ToSocketAddrs, UdpSocket};
-use std::os::unix::io::{AsRawFd, Fd};
+use std::os::unix::io::{AsRawFd, RawFd};
 
 use mio::Evented;
 
@@ -59,7 +58,7 @@ impl DnsSocket {
 }
 
 /// Represents an error in sending or receiving a DNS message.
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Debug)]
 pub enum Error {
     DecodeError(DecodeError),
     EncodeError(EncodeError),
@@ -78,32 +77,32 @@ impl fmt::Display for Error {
     }
 }
 
-impl FromError<DecodeError> for Error {
-    fn from_error(err: DecodeError) -> Error {
+impl From<DecodeError> for Error {
+    fn from(err: DecodeError) -> Error {
         Error::DecodeError(err)
     }
 }
 
-impl FromError<EncodeError> for Error {
-    fn from_error(err: EncodeError) -> Error {
+impl From<EncodeError> for Error {
+    fn from(err: EncodeError) -> Error {
         Error::EncodeError(err)
     }
 }
 
-impl FromError<DnsError> for Error {
-    fn from_error(err: DnsError) -> Error {
+impl From<DnsError> for Error {
+    fn from(err: DnsError) -> Error {
         Error::DnsError(err)
     }
 }
 
-impl FromError<io::Error> for Error {
-    fn from_error(err: io::Error) -> Error {
+impl From<io::Error> for Error {
+    fn from(err: io::Error) -> Error {
         Error::IoError(err)
     }
 }
 
 impl AsRawFd for DnsSocket {
-    fn as_raw_fd(&self) -> Fd {
+    fn as_raw_fd(&self) -> RawFd {
         self.sock.as_raw_fd()
     }
 }

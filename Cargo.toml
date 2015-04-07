@@ -18,4 +18,4 @@ authors = ["Murarth <murarth@gmail.com>"]
 rand = "*"
 
 [dependencies.mio]
-git = "https://github.com/carllerche/mio"
+git = "https://github.com/murarth/mio"

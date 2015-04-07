@@ -42,7 +42,7 @@ pub fn load() -> io::Result<DnsConfig> {
 
     if cfg.name_servers.is_empty() {
         Err(io::Error::new(io::ErrorKind::Other,
-            "no nameserver directives in resolv.conf", None))
+            "no nameserver directives in resolv.conf"))
     } else {
         Ok(cfg)
     }

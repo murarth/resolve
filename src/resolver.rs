@@ -62,7 +62,7 @@ impl DnsResolver {
             }
 
             Err(Error::IoError(io::Error::new(io::ErrorKind::Other,
-                "failed to resolve address", Some("name not found".to_string()))))
+                "failed to resolve address: name not found")))
         })
     }
 
@@ -110,7 +110,7 @@ impl DnsResolver {
                     Err(e)
                 } else {
                     Err(Error::IoError(io::Error::new(io::ErrorKind::Other,
-                        "failed to resolve host", Some("name not found".to_string()))))
+                        "failed to resolve host: name not found")))
                 }
             } else {
                 Ok(ResolveHost(res.into_iter()))
@@ -143,8 +143,8 @@ impl DnsResolver {
             }
         }
 
-        Err(Error::IoError(io::Error::new(io::ErrorKind::TimedOut,
-            "request timed out", None)))
+        Err(Error::IoError(io::Error::new(
+            io::ErrorKind::TimedOut, "request timed out")))
     }
 }
 
@@ -153,8 +153,8 @@ fn convert_error<T, F>(desc: &'static str, f: F) -> io::Result<T>
     match f() {
         Ok(t) => Ok(t),
         Err(Error::IoError(e)) => Err(e),
-        Err(e) => Err(io::Error::new(io::ErrorKind::Other,
-            desc, Some(e.to_string())))
+        Err(e) => Err(io::Error::new(
+            io::ErrorKind::Other, format!("{}: {}", desc, e)))
     }
 }
 

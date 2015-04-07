@@ -1,7 +1,7 @@
 //! Domain Name System (DNS) communication protocol.
 
 #![crate_name = "resolve"]
-#![feature(collections, core, io, io_ext, ip_addr, libc, str_words)]
+#![feature(collections, core, ip_addr, libc, str_words)]
 #![feature(slice_patterns)]
 
 extern crate libc;
