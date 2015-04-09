@@ -5,7 +5,6 @@ use std::ascii::AsciiExt;
 use std::borrow::Cow;
 use std::borrow::Cow::*;
 use std::char::from_u32;
-use std::iter::AdditiveIterator;
 
 /// Indicates an error in encoding or decoding Punycode data
 #[derive(Copy, Clone, Debug, Eq, PartialEq)]
@@ -37,7 +36,7 @@ pub fn host_to_unicode(s: &str) -> Result<Cow<str>, Error> {
 
 fn connect_segments(segments: &[Cow<str>]) -> String {
     let mut res = String::with_capacity(segments.iter()
-        .map(|s| s.len()).sum() + segments.len());
+        .map(|s| s.len()).sum::<usize>() + segments.len());
 
     let mut it = segments.iter().peekable();
 
