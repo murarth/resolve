@@ -26,7 +26,7 @@ pub fn load() -> io::Result<DnsConfig> {
 
     for line in r.lines() {
         let line = try!(line);
-        let words = line.words().collect::<Vec<_>>();
+        let words = line.split_whitespace().collect::<Vec<_>>();
 
         match &words[..] {
             ["nameserver", name, ..] => {

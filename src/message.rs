@@ -6,7 +6,6 @@ use std::default::Default;
 use std::fmt;
 use std::io::{Cursor, Read, Write};
 use std::mem::{transmute, zeroed};
-use std::num::ToPrimitive;
 use std::slice::Iter;
 use std::str::from_utf8_unchecked;
 use std::vec::IntoIter;
@@ -1007,8 +1006,12 @@ struct ResourceData {
     length: u16,
 }
 
-fn to_u16<T: ToPrimitive>(t: T) -> Result<u16, EncodeError> {
-    t.to_u16().ok_or(EncodeError::TooLong)
+fn to_u16(n: usize) -> Result<u16, EncodeError> {
+    if n > u16::max_value() as usize {
+        Err(EncodeError::TooLong)
+    } else {
+        Ok(n as u16)
+    }
 }
 
 #[cfg(test)]
