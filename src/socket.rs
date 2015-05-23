@@ -2,10 +2,11 @@
 
 use std::fmt;
 use std::io;
-use std::net::{SocketAddr, ToSocketAddrs, UdpSocket};
-use std::os::unix::io::{AsRawFd, RawFd};
+use std::net::{IpAddr, Ipv6Addr, SocketAddr};
 
-use mio::Evented;
+use bytes::{SliceBuf, MutSliceBuf, MutBuf};
+
+use mio::udp::UdpSocket;
 
 use address::socket_address_equal;
 use message::{DecodeError, DnsError, EncodeError, Message, MESSAGE_LIMIT};
@@ -18,30 +19,44 @@ pub struct DnsSocket {
 impl DnsSocket {
     /// Returns a `DnsSocket`, bound to an unspecified address.
     pub fn new() -> io::Result<DnsSocket> {
-        DnsSocket::bind("[::]:0")
+        DnsSocket::bind(&SocketAddr::new(
+            IpAddr::V6(Ipv6Addr::new(0, 0, 0, 0, 0, 0, 0, 0)), 0))
     }
 
     /// Returns a `DnsSocket`, bound to the given address.
-    pub fn bind<A: ToSocketAddrs + ?Sized>(addr: &A) -> io::Result<DnsSocket> {
+    pub fn bind(addr: &SocketAddr) -> io::Result<DnsSocket> {
         Ok(DnsSocket{
-            sock: try!(UdpSocket::bind(addr)),
+            sock: try!(UdpSocket::bound(addr)),
         })
     }
 
+    /// Returns the wrapped `UdpSocket`.
+    pub fn get_inner(&self) -> &UdpSocket {
+        &self.sock
+    }
+
     /// Sends a message to the given address.
-    pub fn send_message(&mut self, message: &Message, addr: &SocketAddr) -> Result<(), Error> {
+    pub fn send_message(&mut self, message: &Message, addr: &SocketAddr) -> Result<Option<()>, Error> {
         let mut buf = [0; MESSAGE_LIMIT];
         let data = try!(message.encode(&mut buf));
-        try!(self.sock.send_to(data, addr));
-        Ok(())
+        Ok(try!(self.sock.send_to(&mut SliceBuf::wrap(&data), addr)))
     }
 
     /// Receives a message, returning the address of the recipient.
-    pub fn recv_from(&mut self) -> Result<(Message, SocketAddr), Error> {
+    pub fn recv_from(&mut self) -> Result<Option<(Message, SocketAddr)>, Error> {
         let mut buf = [0; MESSAGE_LIMIT];
-        let (n, addr) = try!(self.sock.recv_from(&mut buf));
+
+        let (addr, n_rem) = {
+            let mut mutbuf = MutSliceBuf::wrap(&mut buf);
+            match try!(self.sock.recv_from(&mut mutbuf)) {
+                Some(addr) => (addr, mutbuf.remaining()),
+                None => return Ok(None)
+            }
+        };
+
+        let n = buf.len() - n_rem;
         let msg = try!(Message::decode(&buf[..n]));
-        Ok((msg, addr))
+        Ok(Some((msg, addr)))
     }
 
     /// Attempts to read a DNS message. The message will only be decoded if the
@@ -49,11 +64,22 @@ impl DnsSocket {
     /// address, the message is not decoded and `Ok(None)` is returned.
     pub fn recv_message(&mut self, addr: &SocketAddr) -> Result<Option<Message>, Error> {
         let mut buf = [0; MESSAGE_LIMIT];
-        let (n, recv_addr) = try!(self.sock.recv_from(&mut buf));
+
+        let (recv_addr, n_rem) = {
+            let mut mutbuf = MutSliceBuf::wrap(&mut buf);
+            match try!(self.sock.recv_from(&mut mutbuf)) {
+                Some(addr) => (addr, mutbuf.remaining()),
+                None => return Ok(None)
+            }
+        };
+
         if !socket_address_equal(&recv_addr, addr) {
-            return Ok(None);
+            Ok(None)
+        } else {
+            let n = buf.len() - n_rem;
+            let msg = try!(Message::decode(&buf[..n]));
+            Ok(Some(msg))
         }
-        Ok(Some(try!(Message::decode(&buf[..n]))))
     }
 }
 
@@ -100,12 +126,3 @@ impl From<io::Error> for Error {
         Error::IoError(err)
     }
 }
-
-impl AsRawFd for DnsSocket {
-    fn as_raw_fd(&self) -> RawFd {
-        self.sock.as_raw_fd()
-    }
-}
-
-// TODO: Implement non-blocking read from DnsSocket in order for this to be useful.
-impl Evented for DnsSocket {}

@@ -4,6 +4,7 @@
 #![feature(collections, core, ip_addr, libc)]
 #![feature(slice_patterns)]
 
+extern crate bytes;
 extern crate libc;
 extern crate mio;
 extern crate rand;

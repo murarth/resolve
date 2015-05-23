@@ -2,7 +2,7 @@
 
 use std::default::Default;
 use std::io;
-use std::net::{IpAddr, SocketAddr, ToSocketAddrs};
+use std::net::{IpAddr, SocketAddr};
 use std::vec::IntoIter;
 
 use mio::{Evented, Poll, Token, Interest, PollOpt};
@@ -32,8 +32,7 @@ impl DnsResolver {
 
     /// Constructs a `DnsResolver` using the given configuration and bound
     /// to the given address.
-    pub fn bind<A: ?Sized>(addr: &A, config: DnsConfig) -> io::Result<DnsResolver>
-            where A: ToSocketAddrs {
+    pub fn bind(addr: &SocketAddr, config: DnsConfig) -> io::Result<DnsResolver> {
         Ok(DnsResolver{
             sock: try!(DnsSocket::bind(addr)),
             config: config,
@@ -130,7 +129,7 @@ impl DnsResolver {
 
         try!(self.sock.send_message(out_msg, &ns_addr));
 
-        while try!(poll(&self.sock, self.config.timeout_ms)) {
+        while try!(poll(self.sock.get_inner(), self.config.timeout_ms)) {
             if let Some(msg) = try!(self.sock.recv_message(&ns_addr)) {
                 if msg.header.id != out_msg.header.id {
                     continue;
@@ -185,7 +184,7 @@ pub fn resolve_addr(addr: &IpAddr) -> io::Result<String> {
 /// use resolve::resolve_host;
 /// # use std::io;
 ///
-/// # fn foo() -> io::Result<()> {
+/// # fn _foo() -> io::Result<()> {
 /// for addr in try!(resolve_host("rust-lang.org")) {
 ///     println!("found address: {}", addr);
 /// }
