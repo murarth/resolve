@@ -2,18 +2,17 @@
 
 use std::default::Default;
 use std::io;
-use std::net::{IpAddr, SocketAddr};
+use std::net::{IpAddr, SocketAddr, ToSocketAddrs};
+use std::time::Duration;
 use std::vec::IntoIter;
-
-use mio::{Evented, Poll, Token, Interest, PollOpt};
 
 use address::address_name;
 use message::{Message, Qr, Question};
 use record::{A, AAAA, Class, Ptr, RecordType};
 use socket::{DnsSocket, Error};
 
-/// Default timeout, in milliseconds.
-pub const TIMEOUT_MS: usize = 5_000;
+/// Default timeout, in seconds.
+pub const TIMEOUT: u64 = 5;
 
 /// Performs resolution operations
 pub struct DnsResolver {
@@ -24,17 +23,23 @@ pub struct DnsResolver {
 impl DnsResolver {
     /// Constructs a `DnsResolver` using the given configuration.
     pub fn new(config: DnsConfig) -> io::Result<DnsResolver> {
+        let sock = try!(DnsSocket::new());
+        try!(sock.get().set_read_timeout(Some(config.timeout)));
+
         Ok(DnsResolver{
-            sock: try!(DnsSocket::new()),
+            sock: sock,
             config: config,
         })
     }
 
     /// Constructs a `DnsResolver` using the given configuration and bound
     /// to the given address.
-    pub fn bind(addr: &SocketAddr, config: DnsConfig) -> io::Result<DnsResolver> {
+    pub fn bind<A: ToSocketAddrs>(addr: A, config: DnsConfig) -> io::Result<DnsResolver> {
+        let sock = try!(DnsSocket::bind(addr));
+        try!(sock.get().set_read_timeout(Some(config.timeout)));
+
         Ok(DnsResolver{
-            sock: try!(DnsSocket::bind(addr)),
+            sock: sock,
             config: config,
         })
     }
@@ -129,7 +134,7 @@ impl DnsResolver {
 
         try!(self.sock.send_message(out_msg, &ns_addr));
 
-        while try!(poll(self.sock.get_inner(), self.config.timeout_ms)) {
+        loop {
             if let Some(msg) = try!(self.sock.recv_message(&ns_addr)) {
                 if msg.header.id != out_msg.header.id {
                     continue;
@@ -141,9 +146,6 @@ impl DnsResolver {
                 return Ok(msg);
             }
         }
-
-        Err(Error::IoError(io::Error::new(
-            io::ErrorKind::TimedOut, "request timed out")))
     }
 }
 
@@ -161,13 +163,6 @@ fn convert_error<T, F>(desc: &'static str, f: F) -> io::Result<T>
 pub fn default_config() -> io::Result<DnsConfig> {
     use resolv_conf::load;
     load()
-}
-
-fn poll<E: Evented>(e: &E, timeout: usize) -> io::Result<bool> {
-    let mut poll = try!(Poll::new());
-    try!(poll.register(e, Token(0), Interest::readable(), PollOpt::level()));
-    let ready = try!(poll.poll(timeout)) == 1;
-    Ok(ready)
 }
 
 /// Resolves an IPv4 or IPv6 address to a hostname.
@@ -211,8 +206,8 @@ impl Iterator for ResolveHost {
 pub struct DnsConfig {
     /// List of name servers
     pub name_servers: Vec<SocketAddr>,
-    /// Request timeout, in milliseconds
-    pub timeout_ms: usize,
+    /// Request timeout
+    pub timeout: Duration,
 }
 
 impl DnsConfig {
@@ -228,7 +223,7 @@ impl Default for DnsConfig {
     fn default() -> DnsConfig {
         DnsConfig{
             name_servers: Vec::new(),
-            timeout_ms: TIMEOUT_MS,
+            timeout: Duration::from_secs(TIMEOUT),
         }
     }
 }

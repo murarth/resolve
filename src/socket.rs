@@ -2,11 +2,7 @@
 
 use std::fmt;
 use std::io;
-use std::net::{IpAddr, Ipv6Addr, SocketAddr};
-
-use bytes::{SliceBuf, MutSliceBuf, MutBuf};
-
-use mio::udp::UdpSocket;
+use std::net::{IpAddr, Ipv6Addr, SocketAddr, ToSocketAddrs, UdpSocket};
 
 use address::socket_address_equal;
 use message::{DecodeError, DnsError, EncodeError, Message, MESSAGE_LIMIT};
@@ -24,39 +20,34 @@ impl DnsSocket {
     }
 
     /// Returns a `DnsSocket`, bound to the given address.
-    pub fn bind(addr: &SocketAddr) -> io::Result<DnsSocket> {
+    pub fn bind<A: ToSocketAddrs>(addr: A) -> io::Result<DnsSocket> {
         Ok(DnsSocket{
-            sock: try!(UdpSocket::bound(addr)),
+            sock: try!(UdpSocket::bind(addr)),
         })
     }
 
-    /// Returns the wrapped `UdpSocket`.
-    pub fn get_inner(&self) -> &UdpSocket {
+    /// Returns a reference to the wrapped `UdpSocket`.
+    pub fn get(&self) -> &UdpSocket {
         &self.sock
     }
 
     /// Sends a message to the given address.
-    pub fn send_message(&mut self, message: &Message, addr: &SocketAddr) -> Result<Option<()>, Error> {
+    pub fn send_message<A: ToSocketAddrs>(&mut self,
+            message: &Message, addr: A) -> Result<(), Error> {
         let mut buf = [0; MESSAGE_LIMIT];
         let data = try!(message.encode(&mut buf));
-        Ok(try!(self.sock.send_to(&mut SliceBuf::wrap(&data), addr)))
+        try!(self.sock.send_to(data, addr));
+        Ok(())
     }
 
     /// Receives a message, returning the address of the recipient.
-    pub fn recv_from(&mut self) -> Result<Option<(Message, SocketAddr)>, Error> {
+    pub fn recv_from(&mut self) -> Result<(Message, SocketAddr), Error> {
         let mut buf = [0; MESSAGE_LIMIT];
 
-        let (addr, n_rem) = {
-            let mut mutbuf = MutSliceBuf::wrap(&mut buf);
-            match try!(self.sock.recv_from(&mut mutbuf)) {
-                Some(addr) => (addr, mutbuf.remaining()),
-                None => return Ok(None)
-            }
-        };
+        let (n, addr) = try!(self.sock.recv_from(&mut buf));
 
-        let n = buf.len() - n_rem;
         let msg = try!(Message::decode(&buf[..n]));
-        Ok(Some((msg, addr)))
+        Ok((msg, addr))
     }
 
     /// Attempts to read a DNS message. The message will only be decoded if the
@@ -65,18 +56,11 @@ impl DnsSocket {
     pub fn recv_message(&mut self, addr: &SocketAddr) -> Result<Option<Message>, Error> {
         let mut buf = [0; MESSAGE_LIMIT];
 
-        let (recv_addr, n_rem) = {
-            let mut mutbuf = MutSliceBuf::wrap(&mut buf);
-            match try!(self.sock.recv_from(&mut mutbuf)) {
-                Some(addr) => (addr, mutbuf.remaining()),
-                None => return Ok(None)
-            }
-        };
+        let (n, recv_addr) = try!(self.sock.recv_from(&mut buf));
 
         if !socket_address_equal(&recv_addr, addr) {
             Ok(None)
         } else {
-            let n = buf.len() - n_rem;
             let msg = try!(Message::decode(&buf[..n]));
             Ok(Some(msg))
         }

@@ -1,12 +1,9 @@
 //! Domain Name System (DNS) communication protocol.
 
 #![crate_name = "resolve"]
-#![feature(collections, core, ip_addr, libc)]
-#![feature(slice_patterns)]
+#![feature(duration, ip_addr, slice_patterns, socket_timeout, vec_resize)]
 
-extern crate bytes;
 extern crate libc;
-extern crate mio;
 extern crate rand;
 
 pub use address::address_name;

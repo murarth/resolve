@@ -15,10 +15,5 @@ version = "0.0.1"
 authors = ["Murarth <murarth@gmail.com>"]
 
 [dependencies]
+libc = "*"
 rand = "*"
-
-[dependencies.bytes]
-git = "https://github.com/murarth/bytes"
-
-[dependencies.mio]
-git = "https://github.com/murarth/mio"

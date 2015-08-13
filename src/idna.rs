@@ -36,7 +36,7 @@ pub fn host_to_unicode(s: &str) -> Result<Cow<str>, Error> {
 
 fn connect_segments(segments: &[Cow<str>]) -> String {
     let mut res = String::with_capacity(segments.iter()
-        .map(|s| s.len()).sum::<usize>() + segments.len());
+        .map(|s| s.len()).fold(0, |acc, n| acc + n) + segments.len());
 
     let mut it = segments.iter().peekable();
 
@@ -103,7 +103,7 @@ fn adapt(delta: u32, num_points: u32, first_time: bool) -> u32 {
 pub fn decode(mut s: &str) -> Result<String, Error> {
     let mut output = Vec::new();
 
-    if let Some(pos) = s.as_bytes().rposition_elem(&b'-') {
+    if let Some(pos) = s.as_bytes().iter().rposition(|&b| b == b'-') {
         if pos == 0 {
             return Err(Error);
         }
