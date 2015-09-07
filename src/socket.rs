@@ -76,6 +76,19 @@ pub enum Error {
     IoError(io::Error),
 }
 
+impl Error {
+    pub fn is_timeout(&self) -> bool {
+        match *self {
+            Error::IoError(ref e) => {
+                let kind = e.kind();
+                kind == io::ErrorKind::TimedOut ||
+                    kind == io::ErrorKind::WouldBlock
+            }
+            _ => false
+        }
+    }
+}
+
 impl fmt::Display for Error {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match *self {

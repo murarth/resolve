@@ -1,8 +1,9 @@
 //! Domain Name System (DNS) communication protocol.
 
-#![feature(ip_addr, socket_timeout, vec_resize)]
+#![feature(duration_span, ip_addr, socket_timeout, vec_resize)]
 
 extern crate libc;
+#[macro_use] extern crate log;
 extern crate rand;
 
 pub use address::address_name;

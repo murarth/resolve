@@ -20,7 +20,7 @@ pub fn get_hostname() -> io::Result<String> {
         _ => {
             let s = unsafe { CStr::from_ptr(buf.as_ptr()) };
             match from_utf8(s.to_bytes()) {
-                Ok(s) => Ok(s.to_string()),
+                Ok(s) => Ok(s.to_owned()),
                 Err(_) => Err(io::Error::new(
                     io::ErrorKind::Other, "invalid hostname"))
             }

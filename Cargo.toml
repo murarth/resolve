@@ -16,4 +16,5 @@ authors = ["Murarth <murarth@gmail.com>"]
 
 [dependencies]
 libc = "*"
+log = "*"
 rand = "*"

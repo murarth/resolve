@@ -1056,7 +1056,7 @@ mod test {
                 rcode: RCode::NoError,
             },
             question: vec![
-                Question::new("foo.bar.com.".to_string(),
+                Question::new("foo.bar.com.".to_owned(),
                     RecordType::A, Class::Internet)
             ],
             answer: Vec::new(),
