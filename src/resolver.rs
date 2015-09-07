@@ -1,18 +1,14 @@
 //! High-level resolver operations
 
-use std::default::Default;
 use std::io;
-use std::net::{IpAddr, SocketAddr, ToSocketAddrs};
-use std::time::Duration;
+use std::net::{IpAddr, ToSocketAddrs};
 use std::vec::IntoIter;
 
 use address::address_name;
+use config::DnsConfig;
 use message::{Message, Qr, Question};
 use record::{A, AAAA, Class, Ptr, RecordType};
 use socket::{DnsSocket, Error};
-
-/// Default timeout, in seconds.
-pub const TIMEOUT: u64 = 5;
 
 /// Performs resolution operations
 pub struct DnsResolver {
@@ -130,7 +126,7 @@ impl DnsResolver {
     }
 
     fn get_response(&mut self, out_msg: &Message) -> Result<Message, Error> {
-        let ns_addr = self.config.next_name_server();
+        let ns_addr = self.config.name_servers[0];
 
         try!(self.sock.send_message(out_msg, &ns_addr));
 
@@ -199,31 +195,5 @@ impl Iterator for ResolveHost {
 
     fn next(&mut self) -> Option<IpAddr> {
         self.0.next()
-    }
-}
-
-#[derive(Clone, Debug)]
-pub struct DnsConfig {
-    /// List of name servers
-    pub name_servers: Vec<SocketAddr>,
-    /// Request timeout
-    pub timeout: Duration,
-}
-
-impl DnsConfig {
-    /// Returns the address of the next name server.
-    pub fn next_name_server(&self) -> &SocketAddr {
-        // TODO: Implement round-robin and retry systems to make use of all
-        // available name servers.
-        &self.name_servers[0]
-    }
-}
-
-impl Default for DnsConfig {
-    fn default() -> DnsConfig {
-        DnsConfig{
-            name_servers: Vec::new(),
-            timeout: Duration::from_secs(TIMEOUT),
-        }
     }
 }

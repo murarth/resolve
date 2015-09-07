@@ -88,7 +88,7 @@ impl RecordType {
 }
 
 /// Represents resource record data.
-pub trait Record {
+pub trait Record: Sized {
     /// Decodes the `Record` from resource rdata.
     fn decode(data: &mut MsgReader) -> Result<Self, DecodeError>;
 

@@ -1,7 +1,6 @@
 //! Domain Name System (DNS) communication protocol.
 
-#![crate_name = "resolve"]
-#![feature(duration, ip_addr, slice_patterns, socket_timeout, vec_resize)]
+#![feature(ip_addr, socket_timeout, vec_resize)]
 
 extern crate libc;
 extern crate rand;
@@ -14,6 +13,7 @@ pub use resolver::{resolve_addr, resolve_host, DnsResolver};
 pub use socket::{DnsSocket, Error};
 
 pub mod address;
+pub mod config;
 pub mod hostname;
 pub mod idna;
 pub mod message;
