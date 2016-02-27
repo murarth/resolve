@@ -1,6 +1,6 @@
 //! Domain Name System (DNS) communication protocol.
 
-#![feature(duration_span, ip_addr, socket_timeout, vec_resize)]
+#![feature(time2)]
 
 extern crate libc;
 #[macro_use] extern crate log;

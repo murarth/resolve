@@ -2,7 +2,7 @@
 
 use std::io;
 use std::net::{IpAddr, Ipv4Addr, Ipv6Addr, SocketAddr, ToSocketAddrs};
-use std::time::Duration;
+use std::time::{Duration, Instant};
 use std::vec::IntoIter;
 
 use address::address_name;
@@ -241,9 +241,9 @@ fn with_suffixes(host: &str, suffixes: &[String]) -> Vec<String> {
 }
 
 fn span<F, R>(f: F) -> (Duration, R) where F: FnOnce() -> R {
-    let mut r = None;
-    let dur = Duration::span(|| { r = Some(f()); });
-    (dur, r.unwrap())
+    let start = Instant::now();
+    let r = f();
+    (start.elapsed(), r)
 }
 
 #[cfg(unix)]
