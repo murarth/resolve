@@ -51,40 +51,45 @@ pub enum RecordType {
     Ptr,
     /// Start of authority
     Soa,
+    /// Service record
+    Srv,
     /// Text string
     Txt,
     /// Unrecognized record type
     Other(u16),
 }
 
-impl RecordType {
-    /// Converts a `u16` to a `RecordType`.
-    pub fn from_u16(u: u16) -> RecordType {
-        match u {
-            1 => RecordType::A,
-            5 => RecordType::CName,
-            6 => RecordType::Soa,
-            12 => RecordType::Ptr,
-            15 => RecordType::Mx,
-            16 => RecordType::Txt,
-            28 => RecordType::AAAA,
-            n => RecordType::Other(n),
-        }
-    }
+macro_rules! record_types {
+    ( $( $name:ident => $code:expr , )+ ) => {
+        impl RecordType {
+            /// Converts a `u16` to a `RecordType`.
+            pub fn from_u16(u: u16) -> RecordType {
+                match u {
+                    $( $code => RecordType::$name , )+
+                    n => RecordType::Other(n),
+                }
+            }
 
-    /// Converts a `RecordType` to a `u16`.
-    pub fn to_u16(&self) -> u16 {
-        match *self {
-            RecordType::A => 1,
-            RecordType::CName => 5,
-            RecordType::Soa => 6,
-            RecordType::Ptr => 12,
-            RecordType::Mx => 15,
-            RecordType::Txt => 16,
-            RecordType::AAAA => 28,
-            RecordType::Other(n) => n,
+            /// Converts a `RecordType` to a `u16`.
+            pub fn to_u16(&self) -> u16 {
+                match *self {
+                    $( RecordType::$name => $code , )+
+                    RecordType::Other(n) => n,
+                }
+            }
         }
     }
+}
+
+record_types!{
+    A => 1,
+    AAAA => 28,
+    CName => 5,
+    Mx => 15,
+    Ptr => 12,
+    Soa => 6,
+    Srv => 33,
+    Txt => 16,
 }
 
 /// Represents resource record data.
@@ -94,6 +99,9 @@ pub trait Record: Sized {
 
     /// Encodes the `Record` to resource rdata.
     fn encode(&self, data: &mut MsgWriter) -> Result<(), EncodeError>;
+
+    /// Returns the `RecordType` of queries for this record.
+    fn record_type() -> RecordType;
 }
 
 /// An IPv4 host address
@@ -113,6 +121,8 @@ impl Record for A {
     fn encode(&self, data: &mut MsgWriter) -> Result<(), EncodeError> {
         data.write(&self.address.octets())
     }
+
+    fn record_type() -> RecordType { RecordType::A }
 }
 
 /// An IPv6 host address
@@ -140,6 +150,8 @@ impl Record for AAAA {
         let buf: [u8; 16] = unsafe { transmute(segments) };
         data.write(&buf)
     }
+
+    fn record_type() -> RecordType { RecordType::AAAA }
 }
 
 /// Canonical name for an alias
@@ -157,6 +169,8 @@ impl Record for CName {
     fn encode(&self, data: &mut MsgWriter) -> Result<(), EncodeError> {
         data.write_name(&self.name)
     }
+
+    fn record_type() -> RecordType { RecordType::CName }
 }
 
 /// Mail exchange data
@@ -181,6 +195,8 @@ impl Record for Mx {
         try!(data.write_u16(self.preference));
         data.write_name(&self.exchange)
     }
+
+    fn record_type() -> RecordType { RecordType::Mx }
 }
 
 /// Domain name pointer
@@ -198,6 +214,8 @@ impl Record for Ptr {
     fn encode(&self, data: &mut MsgWriter) -> Result<(), EncodeError> {
         data.write_name(&self.name)
     }
+
+    fn record_type() -> RecordType { RecordType::Ptr }
 }
 
 /// Start of authority
@@ -246,6 +264,42 @@ impl Record for Soa {
         try!(data.write_u32(self.minimum));
         Ok(())
     }
+
+    fn record_type() -> RecordType { RecordType::Soa }
+}
+
+/// Service record
+#[derive(Clone, Debug)]
+pub struct Srv {
+    /// Record priority
+    pub priority: u16,
+    /// Record weight
+    pub weight: u16,
+    /// Service port
+    pub port: u16,
+    /// Target host name
+    pub target: String,
+}
+
+impl Record for Srv {
+    fn decode(data: &mut MsgReader) -> Result<Self, DecodeError> {
+        Ok(Srv{
+            priority: try!(data.read_u16()),
+            weight: try!(data.read_u16()),
+            port: try!(data.read_u16()),
+            target: try!(data.read_name()),
+        })
+    }
+
+    fn encode(&self, data: &mut MsgWriter) -> Result<(), EncodeError> {
+        try!(data.write_u16(self.priority));
+        try!(data.write_u16(self.weight));
+        try!(data.write_u16(self.port));
+        try!(data.write_name(&self.target));
+        Ok(())
+    }
+
+    fn record_type() -> RecordType { RecordType::Srv }
 }
 
 /// Text record
@@ -263,4 +317,6 @@ impl Record for Txt {
     fn encode(&self, data: &mut MsgWriter) -> Result<(), EncodeError> {
         data.write(&self.data)
     }
+
+    fn record_type() -> RecordType { RecordType::Txt }
 }

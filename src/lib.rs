@@ -1,12 +1,14 @@
 //! Domain Name System (DNS) communication protocol.
 
 #![feature(time2)]
+#![deny(missing_docs)]
 
 extern crate libc;
 #[macro_use] extern crate log;
 extern crate rand;
 
 pub use address::address_name;
+pub use config::{default_config, DnsConfig};
 pub use idna::{host_to_ascii, host_to_unicode};
 pub use message::{DecodeError, EncodeError, Message, Question, Resource};
 pub use record::{Class, Record, RecordType};

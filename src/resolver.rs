@@ -1,14 +1,15 @@
 //! High-level resolver operations
 
+use std::cell::Cell;
 use std::io;
 use std::net::{IpAddr, Ipv4Addr, Ipv6Addr, SocketAddr, ToSocketAddrs};
 use std::time::{Duration, Instant};
 use std::vec::IntoIter;
 
 use address::address_name;
-use config::DnsConfig;
+use config::{default_config, DnsConfig};
 use message::{Message, Qr, Question};
-use record::{A, AAAA, Class, Ptr, RecordType};
+use record::{A, AAAA, Class, Ptr, Record, RecordType};
 use socket::{DnsSocket, Error};
 
 /// Performs resolution operations
@@ -17,40 +18,40 @@ pub struct DnsResolver {
     config: DnsConfig,
     /// Index of `config.name_servers` to use in next DNS request;
     /// ignored if `config.rotate` is `false`.
-    next_ns: usize,
+    next_ns: Cell<usize>,
 }
 
 impl DnsResolver {
     /// Constructs a `DnsResolver` using the given configuration.
     pub fn new(config: DnsConfig) -> io::Result<DnsResolver> {
         let sock = try!(DnsSocket::new());
-        DnsResolver::new_with_sock(sock, config)
+        DnsResolver::with_sock(sock, config)
     }
 
     /// Constructs a `DnsResolver` using the given configuration and bound
     /// to the given address.
     pub fn bind<A: ToSocketAddrs>(addr: A, config: DnsConfig) -> io::Result<DnsResolver> {
         let sock = try!(DnsSocket::bind(addr));
-        DnsResolver::new_with_sock(sock, config)
+        DnsResolver::with_sock(sock, config)
     }
 
-    fn new_with_sock(sock: DnsSocket, config: DnsConfig) -> io::Result<DnsResolver> {
+    fn with_sock(sock: DnsSocket, config: DnsConfig) -> io::Result<DnsResolver> {
         Ok(DnsResolver{
             sock: sock,
             config: config,
-            next_ns: 0,
+            next_ns: Cell::new(0),
         })
     }
 
     /// Resolves an IPv4 or IPv6 address to a hostname.
-    pub fn resolve_addr(&mut self, addr: &IpAddr) -> io::Result<String> {
+    pub fn resolve_addr(&self, addr: &IpAddr) -> io::Result<String> {
         convert_error("failed to resolve address", || {
             let mut out_msg = self.basic_message();
 
             out_msg.question.push(Question::new(
                 address_name(addr), RecordType::Ptr, Class::Internet));
 
-            let msg = try!(self.get_response(&out_msg));
+            let msg = try!(self.send_message(&out_msg));
 
             for rr in msg.into_records() {
                 if rr.r_type == RecordType::Ptr {
@@ -69,22 +70,12 @@ impl DnsResolver {
     }
 
     /// Resolves a hostname to a series of IPv4 or IPv6 addresses.
-    pub fn resolve_host(&mut self, host: &str) -> io::Result<ResolveHost> {
+    pub fn resolve_host(&self, host: &str) -> io::Result<ResolveHost> {
         convert_error("failed to resolve host", || {
-            let mut err = None;
-            let mut res = Vec::new();
+            query_names(host, &self.config, |name| {
+                let mut err;
+                let mut res = Vec::new();
 
-            let use_search = !host.ends_with('.') &&
-                host.chars().filter(|&c| c == '.')
-                    .count() as u32 >= self.config.n_dots;
-
-            let names = if use_search {
-                with_suffixes(host, &self.config.search)
-            } else {
-                vec![host.to_owned()]
-            };
-
-            for name in names {
                 info!("attempting lookup of name \"{}\"", name);
 
                 if self.config.use_inet6 {
@@ -104,25 +95,47 @@ impl DnsResolver {
                 if !res.is_empty() {
                     return Ok(ResolveHost(res.into_iter()));
                 }
-            }
 
-            if let Some(e) = err {
-                Err(e)
-            } else {
-                Err(Error::IoError(io::Error::new(io::ErrorKind::Other,
-                    "failed to resolve host: name not found")))
-            }
+                if let Some(e) = err {
+                    Err(e)
+                } else {
+                    Err(Error::IoError(io::Error::new(io::ErrorKind::Other,
+                        "failed to resolve host: name not found")))
+                }
+            })
         })
     }
 
-    fn resolve_host_v4<F>(&mut self, host: &str, mut f: F) -> Result<(), Error>
+    /// Requests a type of record from the DNS server and returns the results.
+    pub fn resolve_record<Rec: Record>(&self, name: &str) -> io::Result<Vec<Rec>> {
+        convert_error("failed to resolve record", || {
+            let r_ty = Rec::record_type();
+            let mut msg = self.basic_message();
+
+            msg.question.push(Question::new(name.to_owned(), r_ty, Class::Internet));
+
+            self.send_message(&msg).and_then(|reply| {
+                let mut rec = Vec::new();
+
+                for rr in reply.into_records() {
+                    if rr.r_type == r_ty {
+                        rec.push(try!(rr.read_rdata::<Rec>()));
+                    }
+                }
+
+                Ok(rec)
+            })
+        })
+    }
+
+    fn resolve_host_v4<F>(&self, host: &str, mut f: F) -> Result<(), Error>
             where F: FnMut(Ipv4Addr) {
         let mut out_msg = self.basic_message();
 
         out_msg.question.push(Question::new(
             host.to_owned(), RecordType::A, Class::Internet));
 
-        let msg = try!(self.get_response(&out_msg));
+        let msg = try!(self.send_message(&out_msg));
 
         for rr in msg.into_records() {
             if rr.r_type == RecordType::A {
@@ -134,14 +147,14 @@ impl DnsResolver {
         Ok(())
     }
 
-    fn resolve_host_v6<F>(&mut self, host: &str, mut f: F) -> Result<(), Error>
+    fn resolve_host_v6<F>(&self, host: &str, mut f: F) -> Result<(), Error>
             where F: FnMut(Ipv6Addr) {
         let mut out_msg = self.basic_message();
 
         out_msg.question.push(Question::new(
             host.to_owned(), RecordType::AAAA, Class::Internet));
 
-        let msg = try!(self.get_response(&out_msg));
+        let msg = try!(self.send_message(&out_msg));
 
         for rr in msg.into_records() {
             if rr.r_type == RecordType::AAAA {
@@ -160,7 +173,8 @@ impl DnsResolver {
         msg
     }
 
-    fn get_response(&mut self, out_msg: &Message) -> Result<Message, Error> {
+    /// Sends a message to the DNS server and attempts to read a response.
+    pub fn send_message(&self, out_msg: &Message) -> Result<Message, Error> {
         let mut last_err = None;
 
         'retry: for retries in 0..self.config.attempts {
@@ -216,9 +230,9 @@ impl DnsResolver {
         Err(last_err.unwrap())
     }
 
-    fn next_nameserver(&mut self) -> SocketAddr {
-        let n = self.next_ns;
-        self.next_ns = (n + 1) % self.config.name_servers.len();
+    fn next_nameserver(&self) -> SocketAddr {
+        let n = self.next_ns.get();
+        self.next_ns.set((n + 1) % self.config.name_servers.len());
         self.config.name_servers[n]
     }
 }
@@ -230,6 +244,33 @@ fn convert_error<T, F>(desc: &str, f: F) -> io::Result<T>
         Err(Error::IoError(e)) => Err(e),
         Err(e) => Err(io::Error::new(
             io::ErrorKind::Other, format!("{}: {}", desc, e)))
+    }
+}
+
+fn query_names<F, T>(name: &str, config: &DnsConfig, mut f: F) -> Result<T, Error>
+        where F: FnMut(String) -> Result<T, Error> {
+    let use_search = !name.ends_with('.') &&
+        name.chars().filter(|&c| c == '.')
+            .count() as u32 >= config.n_dots;
+
+    if use_search {
+        let mut err = None;
+
+        for name in with_suffixes(name, &config.search) {
+            match f(name) {
+                Ok(t) => return Ok(t),
+                Err(e) => err = Some(e)
+            }
+        }
+
+        if let Some(e) = err {
+            Err(e)
+        } else {
+            Err(Error::IoError(io::Error::new(io::ErrorKind::Other,
+                "failed to resolve host: name not found")))
+        }
+    } else {
+        f(name.to_owned())
     }
 }
 
@@ -246,15 +287,9 @@ fn span<F, R>(f: F) -> (Duration, R) where F: FnOnce() -> R {
     (start.elapsed(), r)
 }
 
-#[cfg(unix)]
-pub fn default_config() -> io::Result<DnsConfig> {
-    use resolv_conf::load;
-    load()
-}
-
 /// Resolves an IPv4 or IPv6 address to a hostname.
 pub fn resolve_addr(addr: &IpAddr) -> io::Result<String> {
-    let mut r = try!(DnsResolver::new(try!(default_config())));
+    let r = try!(DnsResolver::new(try!(default_config())));
     r.resolve_addr(addr)
 }
 
@@ -274,7 +309,7 @@ pub fn resolve_addr(addr: &IpAddr) -> io::Result<String> {
 /// # }
 /// ```
 pub fn resolve_host(host: &str) -> io::Result<ResolveHost> {
-    let mut r = try!(DnsResolver::new(try!(default_config())));
+    let r = try!(DnsResolver::new(try!(default_config())));
     r.resolve_host(host)
 }
 

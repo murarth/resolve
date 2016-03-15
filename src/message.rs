@@ -873,18 +873,24 @@ impl Resource {
 
 /// Indicates a message is either a query or response.
 #[derive(Copy, Clone, Debug, Eq, PartialEq)]
+#[repr(u8)]
 pub enum Qr {
+    /// Query
     Query = 0,
+    /// Response
     Response = 1,
 }
 
 /// Represents the kind of message query.
 #[derive(Copy, Clone, Debug, Eq, PartialEq)]
 pub enum OpCode {
+    /// Query
     Query,
-    // IQuery, -- obsolete (RFC 3425)
+    /// Status
     Status,
+    /// Notify
     Notify,
+    /// Update
     Update,
     /// Unrecognized opcode
     Other(u8),
@@ -949,7 +955,7 @@ impl RCode {
         }
     }
 
-    /// Converts an `RCode` to a `u8`.
+    /// Converts a `u8` to an `RCode`.
     pub fn from_u8(u: u8) -> RCode {
         match u {
             0 => RCode::NoError,
@@ -962,7 +968,7 @@ impl RCode {
         }
     }
 
-    /// Converts a `u8` to an `RCode`.
+    /// Converts an `RCode` to a `u8`.
     pub fn to_u8(&self) -> u8 {
         match *self {
             RCode::NoError => 0,
