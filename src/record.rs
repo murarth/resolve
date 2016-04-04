@@ -311,7 +311,7 @@ pub struct Txt {
 
 impl Record for Txt {
     fn decode(data: &mut MsgReader) -> Result<Self, DecodeError> {
-        Ok(Txt{data: try!(data.read_to_end())})
+        Ok(Txt{data: try!(data.read_character_string())})
     }
 
     fn encode(&self, data: &mut MsgWriter) -> Result<(), EncodeError> {

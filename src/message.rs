@@ -115,6 +115,22 @@ impl<'a> MsgReader<'a> {
         Ok(res)
     }
 
+    /// Read a character-string.
+    ///
+    /// According to RFC 1035:
+    ///
+    /// > <character-string> is a single length octet followed
+    /// > by that number of characters. <character-string> is
+    /// > treated as binary information, and can be up to 256
+    /// > characters in length (including the length octet).
+    pub fn read_character_string(&mut self) -> Result<Vec<u8>, DecodeError> {
+        let length_octet = try!(self.read_byte()) as usize;
+        let mut res = Vec::with_capacity(length_octet);
+        res.resize(length_octet, 0);
+        try!(self.read(&mut res));
+        Ok(res)
+    }
+
     /// Reads a big-endian unsigned 16 bit integer.
     pub fn read_u16(&mut self) -> Result<u16, DecodeError> {
         let mut buf = [0; 2];
