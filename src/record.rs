@@ -315,7 +315,7 @@ impl Record for Txt {
     }
 
     fn encode(&self, data: &mut MsgWriter) -> Result<(), EncodeError> {
-        data.write(&self.data)
+        data.write_character_string(&self.data)
     }
 
     fn record_type() -> RecordType { RecordType::Txt }

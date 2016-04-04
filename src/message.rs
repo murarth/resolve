@@ -386,6 +386,18 @@ impl<'a> MsgWriter<'a> {
         }
     }
 
+    /// Write a character string, as defined by RFC 1035.
+    pub fn write_character_string(&mut self, data: &[u8]) -> Result<(), EncodeError> {
+        let len = data.len();
+
+        if len > 255 {
+            Err(EncodeError::TooLong)
+        } else {
+            try!(self.write_byte(len as u8));
+            self.write(data)
+        }
+    }
+
     /// Writes a name to the message.
     pub fn write_name(&mut self, name: &str) -> Result<(), EncodeError> {
         if !is_valid_name(name) {
