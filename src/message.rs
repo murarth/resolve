@@ -111,6 +111,7 @@ impl<'a> MsgReader<'a> {
     /// Reads all remaining bytes.
     pub fn read_to_end(&mut self) -> Result<Vec<u8>, DecodeError> {
         let mut res = Vec::with_capacity(self.remaining());
+        res.resize(self.remaining(), 0);
         try!(self.read(&mut res));
         Ok(res)
     }
