@@ -1,6 +1,5 @@
 //! Domain Name System (DNS) communication protocol.
 
-#![feature(time2)]
 #![deny(missing_docs)]
 
 extern crate libc;
