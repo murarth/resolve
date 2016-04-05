@@ -47,6 +47,8 @@ pub enum RecordType {
     CName,
     /// Mail exchange
     Mx,
+    /// Authoritative name server
+    Ns,
     /// Domain name pointer
     Ptr,
     /// Start of authority
@@ -86,6 +88,7 @@ record_types!{
     AAAA => 28,
     CName => 5,
     Mx => 15,
+    Ns => 2,
     Ptr => 12,
     Soa => 6,
     Srv => 33,
@@ -197,6 +200,25 @@ impl Record for Mx {
     }
 
     fn record_type() -> RecordType { RecordType::Mx }
+}
+
+/// Authoritative name server
+#[derive(Clone, Debug)]
+pub struct Ns {
+    /// Host which should be authoritative for the specified class and domain
+    pub name: String,
+}
+
+impl Record for Ns {
+    fn decode(data: &mut MsgReader) -> Result<Self, DecodeError> {
+        Ok(Ns{name: try!(data.read_name())})
+    }
+
+    fn encode(&self, data: &mut MsgWriter) -> Result<(), EncodeError> {
+        data.write_name(&self.name)
+    }
+
+    fn record_type() -> RecordType { RecordType::Ns }
 }
 
 /// Domain name pointer
