@@ -173,8 +173,20 @@ impl<'a> MsgReader<'a> {
                 break;
             }
 
-            if len & 0b11000000 == 0b11000000 {
-                // The beginning of a pointer reference
+            // If the length flag starts with "11", it will be followed by a
+            // pointer reference. For more information see RFC 1035 section
+            // 4.1.4 (Message compression).
+            // Prefix "00" means "no compression". Prefixes 0x01 and 0x10
+            // are reserved for future use.
+            let compressed = match len >> 6 {
+                0b11 => true,
+                0b00 => false,
+                _ => return Err(DecodeError::InvalidMessage),
+            };
+
+            if compressed {
+                // The beginning of a pointer reference. 14 bit denote the
+                // offset from the start of the message.
                 let hi = (len & 0b00111111) as u64;
                 let lo = try!(self.read_byte()) as u64;
                 let offset = (hi << 8) | lo;
@@ -191,8 +203,6 @@ impl<'a> MsgReader<'a> {
 
                 self.data.set_position(offset);
                 continue;
-            } else if len & 0b11000000 != 0 {
-                return Err(DecodeError::InvalidMessage);
             }
 
             if total_read + 1 + len as usize > NAME_LIMIT {
