@@ -40,11 +40,13 @@ impl DnsSocket {
         Ok(())
     }
 
-    /// Receives a message, returning the address of the recipient.
-    pub fn recv_from(&self) -> Result<(Message, SocketAddr), Error> {
-        let mut buf = [0; MESSAGE_LIMIT];
-
-        let (n, addr) = try!(self.sock.recv_from(&mut buf));
+    /// Receives a message, returning the address of the sender.
+    /// The given buffer is used to store and parse message data.
+    ///
+    /// The buffer should be exactly `MESSAGE_LIMIT` bytes in length.
+    pub fn recv_from<'buf>(&self, buf: &'buf mut [u8])
+            -> Result<(Message<'buf>, SocketAddr), Error> {
+        let (n, addr) = try!(self.sock.recv_from(buf));
 
         let msg = try!(Message::decode(&buf[..n]));
         Ok((msg, addr))
@@ -53,10 +55,11 @@ impl DnsSocket {
     /// Attempts to read a DNS message. The message will only be decoded if the
     /// remote address matches `addr`. If a packet is received from a non-matching
     /// address, the message is not decoded and `Ok(None)` is returned.
-    pub fn recv_message(&self, addr: &SocketAddr) -> Result<Option<Message>, Error> {
-        let mut buf = [0; MESSAGE_LIMIT];
-
-        let (n, recv_addr) = try!(self.sock.recv_from(&mut buf));
+    ///
+    /// The buffer should be exactly `MESSAGE_LIMIT` bytes in length.
+    pub fn recv_message<'buf>(&self, addr: &SocketAddr, buf: &'buf mut [u8])
+            -> Result<Option<Message<'buf>>, Error> {
+        let (n, recv_addr) = try!(self.sock.recv_from(buf));
 
         if !socket_address_equal(&recv_addr, addr) {
             Ok(None)

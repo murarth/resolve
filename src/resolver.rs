@@ -8,7 +8,7 @@ use std::vec::IntoIter;
 
 use address::address_name;
 use config::{default_config, DnsConfig};
-use message::{Message, Qr, Question};
+use message::{Message, Qr, Question, MESSAGE_LIMIT};
 use record::{A, AAAA, Class, Ptr, Record, RecordType};
 use socket::{DnsSocket, Error};
 
@@ -51,7 +51,8 @@ impl DnsResolver {
             out_msg.question.push(Question::new(
                 address_name(addr), RecordType::Ptr, Class::Internet));
 
-            let msg = try!(self.send_message(&out_msg));
+            let mut buf = [0; MESSAGE_LIMIT];
+            let msg = try!(self.send_message(&out_msg, &mut buf));
 
             for rr in msg.into_records() {
                 if rr.r_type == RecordType::Ptr {
@@ -114,17 +115,18 @@ impl DnsResolver {
 
             msg.question.push(Question::new(name.to_owned(), r_ty, Class::Internet));
 
-            self.send_message(&msg).and_then(|reply| {
-                let mut rec = Vec::new();
+            let mut buf = [0; MESSAGE_LIMIT];
+            let reply = try!(self.send_message(&msg, &mut buf));
 
-                for rr in reply.into_records() {
-                    if rr.r_type == r_ty {
-                        rec.push(try!(rr.read_rdata::<Rec>()));
-                    }
+            let mut rec = Vec::new();
+
+            for rr in reply.into_records() {
+                if rr.r_type == r_ty {
+                    rec.push(try!(rr.read_rdata::<Rec>()));
                 }
+            }
 
-                Ok(rec)
-            })
+            Ok(rec)
         })
     }
 
@@ -135,7 +137,8 @@ impl DnsResolver {
         out_msg.question.push(Question::new(
             host.to_owned(), RecordType::A, Class::Internet));
 
-        let msg = try!(self.send_message(&out_msg));
+        let mut buf = [0; MESSAGE_LIMIT];
+        let msg = try!(self.send_message(&out_msg, &mut buf));
 
         for rr in msg.into_records() {
             if rr.r_type == RecordType::A {
@@ -154,7 +157,8 @@ impl DnsResolver {
         out_msg.question.push(Question::new(
             host.to_owned(), RecordType::AAAA, Class::Internet));
 
-        let msg = try!(self.send_message(&out_msg));
+        let mut buf = [0; MESSAGE_LIMIT];
+        let msg = try!(self.send_message(&out_msg, &mut buf));
 
         for rr in msg.into_records() {
             if rr.r_type == RecordType::AAAA {
@@ -174,8 +178,15 @@ impl DnsResolver {
     }
 
     /// Sends a message to the DNS server and attempts to read a response.
-    pub fn send_message(&self, out_msg: &Message) -> Result<Message, Error> {
+    pub fn send_message<'buf>(&self, out_msg: &Message, buf: &'buf mut [u8])
+            -> Result<Message<'buf>, Error> {
         let mut last_err = None;
+
+        // FIXME(rust-lang/rust#21906):
+        // Workaround for mutable borrow interfering with itself.
+        // The drop probably isn't necessary, but it makes me feel better.
+        let buf_ptr = buf as *mut _;
+        drop(buf);
 
         'retry: for retries in 0..self.config.attempts {
             let ns_addr = if self.config.rotate {
@@ -194,10 +205,23 @@ impl DnsResolver {
             loop {
                 try!(self.sock.get().set_read_timeout(Some(timeout)));
 
-                let (passed, r) = span(|| self.sock.recv_message(&ns_addr));
+                // The other part of the aforementioned workaround.
+                let buf = unsafe { &mut *buf_ptr };
 
-                match r {
-                    Ok(None) => (),
+                let start = Instant::now();
+
+                match self.sock.recv_message(&ns_addr, buf) {
+                    Ok(None) => {
+                        let passed = start.elapsed();
+
+                        // Maintain the right total timeout if we're interrupted
+                        // by irrelevant messages.
+                        if timeout < passed {
+                            timeout = Duration::from_secs(0);
+                        } else {
+                            timeout = timeout - passed;
+                        }
+                    }
                     Ok(Some(msg)) => {
                         // Ignore irrelevant messages
                         if msg.header.id == out_msg.header.id &&
@@ -215,14 +239,6 @@ impl DnsResolver {
                         // Immediately bail for other errors
                         return Err(e);
                     }
-                }
-
-                // Maintain the right total timeout if we're interrupted by
-                // irrelevant messages.
-                if timeout < passed {
-                    timeout = Duration::from_secs(0);
-                } else {
-                    timeout = timeout - passed;
                 }
             }
         }
@@ -279,12 +295,6 @@ fn with_suffixes(host: &str, suffixes: &[String]) -> Vec<String> {
         .map(|s| format!("{}.{}", host, s)).collect::<Vec<_>>();
     v.push(host.to_owned());
     v
-}
-
-fn span<F, R>(f: F) -> (Duration, R) where F: FnOnce() -> R {
-    let start = Instant::now();
-    let r = f();
-    (start.elapsed(), r)
 }
 
 /// Resolves an IPv4 or IPv6 address to a hostname.

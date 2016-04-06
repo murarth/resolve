@@ -9,7 +9,8 @@ extern crate rand;
 pub use address::address_name;
 pub use config::{default_config, DnsConfig};
 pub use idna::{host_to_ascii, host_to_unicode};
-pub use message::{DecodeError, EncodeError, Message, Question, Resource};
+pub use message::{DecodeError, EncodeError, Message, Question, Resource,
+    MESSAGE_LIMIT};
 pub use record::{Class, Record, RecordType};
 pub use resolver::{resolve_addr, resolve_host, DnsResolver};
 pub use socket::{DnsSocket, Error};

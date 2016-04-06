@@ -1,6 +1,7 @@
 //! Utilities for composing, decoding, and encoding messages.
 
 use std::ascii::AsciiExt;
+use std::borrow::Cow::{self, Borrowed, Owned};
 use std::cell::Cell;
 use std::default::Default;
 use std::fmt;
@@ -85,6 +86,14 @@ impl<'a> MsgReader<'a> {
     /// Constructs a new message reader.
     pub fn new(data: &[u8]) -> MsgReader {
         MsgReader{data: Cursor::new(data)}
+    }
+
+    /// Constructs a new message reader, which will read from `data`,
+    /// beginning at `offset`.
+    pub fn with_offset(data: &[u8], offset: usize) -> MsgReader {
+        let mut cur = Cursor::new(data);
+        cur.set_position(offset as u64);
+        MsgReader{data: cur}
     }
 
     /// Returns the number of bytes remaining in the message.
@@ -254,6 +263,11 @@ impl<'a> MsgReader<'a> {
         Ok(())
     }
 
+    fn consume(&mut self, n: u64) {
+        let p = self.data.position();
+        self.data.set_position(p + n);
+    }
+
     /// Called at the end of message parsing. Returns `Err(ExtraneousData)`
     /// if there are any unread bytes remaining.
     fn finish(self) -> Result<(), DecodeError> {
@@ -334,7 +348,7 @@ impl<'a> MsgReader<'a> {
     }
 
     /// Reads a resource record item
-    fn read_resource(&mut self) -> Result<Resource, DecodeError> {
+    fn read_resource(&mut self) -> Result<Resource<'a>, DecodeError> {
         let name = try!(self.read_name());
 
         let mut buf = [0; 10];
@@ -348,15 +362,19 @@ impl<'a> MsgReader<'a> {
         let ttl = u32::from_be(msg.ttl);
         let length = u16::from_be(msg.length);
 
-        let mut r_data = Vec::new();
-        try!(self.read_into(&mut r_data, length as usize));
+        let data = *self.data.get_ref();
+        let offset = self.data.position() as usize;
+
+        let r_data = &data[..offset + length as usize];
+        self.consume(length as u64);
 
         Ok(Resource{
             name: name,
             r_type: RecordType::from_u16(r_type),
             r_class: Class::from_u16(r_class),
             ttl: ttl,
-            data: r_data,
+            data: Borrowed(r_data),
+            offset: offset,
         })
     }
 }
@@ -568,23 +586,23 @@ fn is_valid_segment(s: &str) -> bool {
 
 /// Represents a DNS message.
 #[derive(Clone, Debug, Default, Eq, PartialEq)]
-pub struct Message {
+pub struct Message<'a> {
     /// Describes the content of the remainder of the message.
     pub header: Header,
     /// Carries the question of query type messages.
     pub question: Vec<Question>,
     /// Resource records that answer the query
-    pub answer: Vec<Resource>,
+    pub answer: Vec<Resource<'a>>,
     /// Resource records that point to an authoritative name server
-    pub authority: Vec<Resource>,
+    pub authority: Vec<Resource<'a>>,
     /// Resource records that relate to the query, but are not strictly
     /// answers for the question.
-    pub additional: Vec<Resource>,
+    pub additional: Vec<Resource<'a>>,
 }
 
-impl Message {
+impl<'a> Message<'a> {
     /// Constructs a new `Message` with a random id value.
-    pub fn new() -> Message {
+    pub fn new() -> Message<'a> {
         Message{
             header: Header::new(),
             ..Default::default()
@@ -592,7 +610,7 @@ impl Message {
     }
 
     /// Constructs a new `Message` with the given id value.
-    pub fn with_id(id: u16) -> Message {
+    pub fn with_id(id: u16) -> Message<'a> {
         Message{
             header: Header::with_id(id),
             ..Default::default()
@@ -635,7 +653,7 @@ impl Message {
 
     /// Encodes a message to a series of bytes. On success, returns a subslice
     /// of the given buffer containing only the encoded message bytes.
-    pub fn encode<'a>(&self, buf: &'a mut [u8]) -> Result<&'a [u8], EncodeError> {
+    pub fn encode<'buf>(&self, buf: &'buf mut [u8]) -> Result<&'buf [u8], EncodeError> {
         let mut w = MsgWriter::new(buf);
         let hdr = &self.header;
 
@@ -693,7 +711,7 @@ impl Message {
     }
 
     /// Consumes the message and returns an iterator over its records.
-    pub fn into_records(self) -> RecordIntoIter {
+    pub fn into_records(self) -> RecordIntoIter<'a> {
         RecordIntoIter{
             iters: [
                 self.answer.into_iter(),
@@ -706,13 +724,13 @@ impl Message {
 
 /// Yields `&Resource` items from a Message.
 pub struct RecordIter<'a> {
-    iters: [Iter<'a, Resource>; 3],
+    iters: [Iter<'a, Resource<'a>>; 3],
 }
 
 impl<'a> Iterator for RecordIter<'a> {
-    type Item = &'a Resource;
+    type Item = &'a Resource<'a>;
 
-    fn next(&mut self) -> Option<&'a Resource> {
+    fn next(&mut self) -> Option<&'a Resource<'a>> {
         self.iters[0].next()
             .or_else(|| self.iters[1].next())
             .or_else(|| self.iters[2].next())
@@ -720,14 +738,14 @@ impl<'a> Iterator for RecordIter<'a> {
 }
 
 /// Yields `Resource` items from a Message.
-pub struct RecordIntoIter {
-    iters: [IntoIter<Resource>; 3],
+pub struct RecordIntoIter<'a> {
+    iters: [IntoIter<Resource<'a>>; 3],
 }
 
-impl Iterator for RecordIntoIter {
-    type Item = Resource;
+impl<'a> Iterator for RecordIntoIter<'a> {
+    type Item = Resource<'a>;
 
-    fn next(&mut self) -> Option<Resource> {
+    fn next(&mut self) -> Option<Resource<'a>> {
         self.iters[0].next()
             .or_else(|| self.iters[1].next())
             .or_else(|| self.iters[2].next())
@@ -866,7 +884,7 @@ impl Question {
 
 /// Represents a resource record item.
 #[derive(Clone, Debug, Eq, PartialEq)]
-pub struct Resource {
+pub struct Resource<'a> {
     /// Resource name
     pub name: String,
     /// Resource type
@@ -876,25 +894,28 @@ pub struct Resource {
     /// Time-to-live
     pub ttl: u32,
     /// Record data
-    pub data: Vec<u8>,
+    data: Cow<'a, [u8]>,
+    /// Message data offset
+    offset: usize,
 }
 
-impl Resource {
+impl<'a> Resource<'a> {
     /// Constructs a new `Resource`.
     pub fn new(name: String, r_type: RecordType,
-            r_class: Class, ttl: u32) -> Resource {
+            r_class: Class, ttl: u32) -> Resource<'a> {
         Resource{
             name: name,
             r_type: r_type,
             r_class: r_class,
             ttl: ttl,
-            data: Vec::new(),
+            data: Owned(Vec::new()),
+            offset: 0,
         }
     }
 
     /// Decodes resource data into the given `Record` type.
     pub fn read_rdata<R: Record>(&self) -> Result<R, DecodeError> {
-        let mut r = MsgReader::new(&self.data);
+        let mut r = MsgReader::with_offset(&self.data, self.offset);
         let res = try!(Record::decode(&mut r));
         try!(r.finish());
         Ok(res)
@@ -905,7 +926,8 @@ impl Resource {
         let mut buf = [0; MESSAGE_LIMIT];
         let mut w = MsgWriter::new(&mut buf[..]);
         try!(record.encode(&mut w));
-        self.data = w.into_bytes().to_vec();
+        self.data = Owned(w.into_bytes().to_vec());
+        self.offset = 0;
         Ok(())
     }
 }
