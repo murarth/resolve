@@ -543,15 +543,17 @@ impl<'a> MsgWriter<'a> {
 
         let mut rd: ResourceData = unsafe { zeroed() };
 
+        let rdata = resource.get_rdata();
+
         rd.r_type = resource.r_type.to_u16().to_be();
         rd.r_class = resource.r_class.to_u16().to_be();
         rd.ttl = resource.ttl.to_be();
-        rd.length = try!(to_u16(resource.data.len()));
+        rd.length = try!(to_u16(rdata.len()));
 
         let buf: [u8; 10] = unsafe { transmute(rd) };
 
         try!(self.write(&buf));
-        self.write(&resource.data)
+        self.write(rdata)
     }
 }
 
@@ -893,9 +895,9 @@ pub struct Resource<'a> {
     pub r_class: Class,
     /// Time-to-live
     pub ttl: u32,
-    /// Record data
+    /// Message data, up to and including resource record data
     data: Cow<'a, [u8]>,
-    /// Message data offset
+    /// Beginning of rdata within `data`
     offset: usize,
 }
 
@@ -911,6 +913,11 @@ impl<'a> Resource<'a> {
             data: Owned(Vec::new()),
             offset: 0,
         }
+    }
+
+    /// Returns resource data.
+    pub fn get_rdata(&self) -> &[u8] {
+        &self.data[self.offset..]
     }
 
     /// Decodes resource data into the given `Record` type.
