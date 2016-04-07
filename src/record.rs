@@ -108,7 +108,7 @@ pub trait Record: Sized {
 }
 
 /// An IPv4 host address
-#[derive(Copy, Clone, Debug)]
+#[derive(Copy, Clone, Debug, PartialEq, Eq)]
 pub struct A {
     /// The host address
     pub address: Ipv4Addr,
@@ -129,7 +129,7 @@ impl Record for A {
 }
 
 /// An IPv6 host address
-#[derive(Copy, Clone, Debug)]
+#[derive(Copy, Clone, Debug, PartialEq, Eq)]
 pub struct AAAA {
     /// The host address
     pub address: Ipv6Addr,
@@ -158,7 +158,7 @@ impl Record for AAAA {
 }
 
 /// Canonical name for an alias
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub struct CName {
     /// Canonical host name
     pub name: String,
@@ -177,7 +177,7 @@ impl Record for CName {
 }
 
 /// Mail exchange data
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Mx {
     /// Represents the preference of this record among others.
     /// Lower values are preferred.
@@ -203,7 +203,7 @@ impl Record for Mx {
 }
 
 /// Authoritative name server
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Ns {
     /// Host which should be authoritative for the specified class and domain
     pub name: String,
@@ -222,7 +222,7 @@ impl Record for Ns {
 }
 
 /// Domain name pointer
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Ptr {
     /// The name of the host
     pub name: String,
@@ -241,7 +241,7 @@ impl Record for Ptr {
 }
 
 /// Start of authority
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Soa {
     /// Domain name of the name server that was the original or primary source
     /// of data for this zone.
@@ -291,7 +291,7 @@ impl Record for Soa {
 }
 
 /// Service record
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Srv {
     /// Record priority
     pub priority: u16,
@@ -325,7 +325,7 @@ impl Record for Srv {
 }
 
 /// Text record
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Txt {
     /// One or more character strings
     pub data: Vec<u8>,
@@ -341,4 +341,21 @@ impl Record for Txt {
     }
 
     fn record_type() -> RecordType { RecordType::Txt }
+}
+
+#[cfg(test)]
+mod test {
+    use super::Ns;
+
+    #[test]
+    fn test_record_eq() {
+        //! Most records should implement Eq.
+        //! Verify this with the Ns record.
+        let a = Ns { name: "example.com".into() };
+        let b = Ns { name: "example.com".into() };
+        let c = Ns { name: "example.org".into() };
+        assert!(a == b);
+        assert!(a != c);
+        assert!(b != c);
+    }
 }
