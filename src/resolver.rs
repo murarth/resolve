@@ -54,7 +54,7 @@ impl DnsResolver {
             let mut buf = [0; MESSAGE_LIMIT];
             let msg = try!(self.send_message(&out_msg, &mut buf));
 
-            for rr in msg.into_records() {
+            for rr in msg.answer.into_iter() {
                 if rr.r_type == RecordType::Ptr {
                     let ptr = try!(rr.read_rdata::<Ptr>());
                     let mut name = ptr.name;
@@ -120,7 +120,7 @@ impl DnsResolver {
 
             let mut rec = Vec::new();
 
-            for rr in reply.into_records() {
+            for rr in reply.answer.into_iter() {
                 if rr.r_type == r_ty {
                     rec.push(try!(rr.read_rdata::<Rec>()));
                 }
@@ -140,7 +140,7 @@ impl DnsResolver {
         let mut buf = [0; MESSAGE_LIMIT];
         let msg = try!(self.send_message(&out_msg, &mut buf));
 
-        for rr in msg.into_records() {
+        for rr in msg.answer.into_iter() {
             if rr.r_type == RecordType::A {
                 let a = try!(rr.read_rdata::<A>());
                 f(a.address);
@@ -160,7 +160,7 @@ impl DnsResolver {
         let mut buf = [0; MESSAGE_LIMIT];
         let msg = try!(self.send_message(&out_msg, &mut buf));
 
-        for rr in msg.into_records() {
+        for rr in msg.answer.into_iter() {
             if rr.r_type == RecordType::AAAA {
                 let aaaa = try!(rr.read_rdata::<AAAA>());
                 f(aaaa.address);
