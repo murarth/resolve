@@ -15,6 +15,9 @@ pub struct DnsSocket {
 impl DnsSocket {
     /// Returns a `DnsSocket`, bound to an unspecified address.
     pub fn new() -> io::Result<DnsSocket> {
+        // FIXME: On some systems, a socket bound to an IPv6 address cannot send
+        // messages to an IPv4 address. `UdpSocket::set_only_v6`
+        // should remedy this, but it is unstable until 1.9.0.
         DnsSocket::bind(&SocketAddr::new(
             IpAddr::V6(Ipv6Addr::new(0, 0, 0, 0, 0, 0, 0, 0)), 0))
     }
