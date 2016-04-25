@@ -4,6 +4,8 @@ use std::fmt;
 use std::io;
 use std::net::{IpAddr, Ipv6Addr, SocketAddr, ToSocketAddrs, UdpSocket};
 
+use net2::UdpBuilder;
+
 use address::socket_address_equal;
 use message::{DecodeError, DnsError, EncodeError, Message, MESSAGE_LIMIT};
 
@@ -15,17 +17,26 @@ pub struct DnsSocket {
 impl DnsSocket {
     /// Returns a `DnsSocket`, bound to an unspecified address.
     pub fn new() -> io::Result<DnsSocket> {
-        // FIXME: On some systems, a socket bound to an IPv6 address cannot send
-        // messages to an IPv4 address. `UdpSocket::set_only_v6`
-        // should remedy this, but it is unstable until 1.9.0.
-        DnsSocket::bind(&SocketAddr::new(
+        DnsSocket::bind(SocketAddr::new(
             IpAddr::V6(Ipv6Addr::new(0, 0, 0, 0, 0, 0, 0, 0)), 0))
     }
 
     /// Returns a `DnsSocket`, bound to the given address.
-    pub fn bind<A: ToSocketAddrs>(addr: A) -> io::Result<DnsSocket> {
+    pub fn bind<A: ToSocketAddrs>(addrs: A) -> io::Result<DnsSocket> {
+        let sock = try!(each_addr(addrs, |addr| {
+            let builder = if is_v4(&addr) {
+                try!(UdpBuilder::new_v4())
+            } else {
+                let b = try!(UdpBuilder::new_v6());
+                try!(b.only_v6(false));
+                b
+            };
+
+            builder.bind(addr)
+        }));
+
         Ok(DnsSocket{
-            sock: try!(UdpSocket::bind(addr)),
+            sock: sock,
         })
     }
 
@@ -70,6 +81,28 @@ impl DnsSocket {
             let msg = try!(Message::decode(&buf[..n]));
             Ok(Some(msg))
         }
+    }
+}
+
+fn each_addr<A, F, R>(addrs: A, mut f: F) -> io::Result<R>
+        where A: ToSocketAddrs, F: FnMut(SocketAddr) -> io::Result<R> {
+    let mut last_err = None;
+
+    for addr in try!(addrs.to_socket_addrs()) {
+        match f(addr) {
+            Ok(r) => return Ok(r),
+            Err(e) => last_err = Some(e)
+        }
+    }
+
+    Err(last_err.unwrap_or_else(
+        || io::Error::new(io::ErrorKind::Other, "could not resolve any addresses")))
+}
+
+fn is_v4(addr: &SocketAddr) -> bool {
+    match *addr {
+        SocketAddr::V4(_) => true,
+        SocketAddr::V6(_) => false
     }
 }
 

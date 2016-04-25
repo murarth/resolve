@@ -24,8 +24,7 @@ pub struct DnsResolver {
 impl DnsResolver {
     /// Constructs a `DnsResolver` using the given configuration.
     pub fn new(config: DnsConfig) -> io::Result<DnsResolver> {
-        let bind = bind_addr(&config.name_servers);
-        let sock = try!(DnsSocket::bind((bind, 0)));
+        let sock = try!(DnsSocket::new());
         DnsResolver::with_sock(sock, config)
     }
 
@@ -251,13 +250,6 @@ impl DnsResolver {
         let n = self.next_ns.get();
         self.next_ns.set((n + 1) % self.config.name_servers.len());
         self.config.name_servers[n]
-    }
-}
-
-fn bind_addr(name_servers: &[SocketAddr]) -> IpAddr {
-    match name_servers.first() {
-        Some(&SocketAddr::V6(_)) => IpAddr::V6(Ipv6Addr::new(0, 0, 0, 0, 0, 0, 0, 0)),
-        _ => IpAddr::V4(Ipv4Addr::new(0, 0, 0, 0))
     }
 }
 
