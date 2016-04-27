@@ -4,7 +4,6 @@
 
 extern crate libc;
 #[macro_use] extern crate log;
-extern crate net2;
 extern crate rand;
 
 pub use address::address_name;
