@@ -2,13 +2,14 @@
 
 #![deny(missing_docs)]
 
+extern crate idna as external_idna;
 extern crate libc;
 #[macro_use] extern crate log;
 extern crate rand;
 
 pub use address::address_name;
 pub use config::{default_config, DnsConfig};
-pub use idna::{host_to_ascii, host_to_unicode};
+pub use idna::{to_ascii, to_unicode};
 pub use message::{DecodeError, EncodeError, Message, Question, Resource,
     MESSAGE_LIMIT};
 pub use record::{Class, Record, RecordType};

@@ -583,7 +583,7 @@ fn is_valid_name(name: &str) -> bool {
 /// respond that it doesn't exist, anyway.
 fn is_valid_segment(s: &str) -> bool {
     !(s.starts_with('-') || s.ends_with('-')) &&
-        s.chars().all(|c| !(c.is_whitespace() || c.is_control()))
+        s.chars().all(|c| !(c == '.' || c.is_whitespace() || c.is_control()))
 }
 
 /// Represents a DNS message.
