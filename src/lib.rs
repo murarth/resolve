@@ -18,6 +18,7 @@ pub use socket::{DnsSocket, Error};
 
 pub mod address;
 pub mod config;
+pub mod hosts;
 pub mod hostname;
 pub mod idna;
 pub mod message;
