@@ -40,6 +40,6 @@ fn default_config_impl() -> io::Result<DnsConfig> {
 #[cfg(windows)]
 fn default_config_impl() -> io::Result<DnsConfig> {
     // TODO: Get a list of nameservers from Windows API.
-    // For now, generate a compile error.
-    nameserver_list_not_available_on_windows()
+    // For now, return an IO error.
+    Err(io::Error::new(io::ErrorKind::Other, "Nameserver list not available on Windows"))
 }
