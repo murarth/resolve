@@ -548,7 +548,7 @@ impl<'a> MsgWriter<'a> {
         rd.r_type = resource.r_type.to_u16().to_be();
         rd.r_class = resource.r_class.to_u16().to_be();
         rd.ttl = resource.ttl.to_be();
-        rd.length = try!(to_u16(rdata.len()));
+        rd.length = try!(to_u16(rdata.len())).to_be();
 
         let buf: [u8; 10] = unsafe { transmute(rd) };
 
