@@ -1,0 +1,1 @@
+initSidebarItems({"enum":[["Error","Represents an error in sending or receiving a DNS message."]],"struct":[["DnsSocket","Represents a socket transmitting DNS messages."]]});

@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="generator" content="rustdoc">
+    <meta name="description" content="API documentation for the Rust `resolve` crate.">
+    <meta name="keywords" content="rust, rustlang, rust-lang, resolve">
+
+    <title>resolve - Rust</title>
+
+    <link rel="stylesheet" type="text/css" href="../rustdoc.css">
+    <link rel="stylesheet" type="text/css" href="../main.css">
+    
+
+    
+    
+</head>
+<body class="rustdoc">
+    <!--[if lte IE 8]>
+    <div class="warning">
+        This old browser is unsupported and will most likely display funky
+        things.
+    </div>
+    <![endif]-->
+
+    
+
+    <nav class="sidebar">
+        
+        <p class='location'></p><script>window.sidebarCurrent = {name: 'resolve', ty: 'mod', relpath: '../'};</script>
+    </nav>
+
+    <nav class="sub">
+        <form class="search-form js-only">
+            <div class="search-container">
+                <input class="search-input" name="search"
+                       autocomplete="off"
+                       placeholder="Click or press ‘S’ to search, ‘?’ for more options…"
+                       type="search">
+            </div>
+        </form>
+    </nav>
+
+    <section id='main' class="content mod">
+<h1 class='fqn'><span class='in-band'>Crate <a class='mod' href=''>resolve</a></span><span class='out-of-band'><span id='render-detail'>
+                   <a id="toggle-all-docs" href="javascript:void(0)" title="collapse all docs">
+                       [<span class='inner'>&#x2212;</span>]
+                   </a>
+               </span><a id='src-0' class='srclink' href='../src/resolve/src/lib.rs.html#1-28' title='goto source code'>[src]</a></span></h1>
+<div class='docblock'><p>Domain Name System (DNS) communication protocol.</p>
+</div><h2 id='reexports' class='section-header'><a href="#reexports">Reexports</a></h2>
+<table><tr><td><code>pub use address::<a class='fn' href='../resolve/address/fn.address_name.html' title='resolve::address::address_name'>address_name</a>;</code></td></tr><tr><td><code>pub use config::{<a class='fn' href='../resolve/config/fn.default_config.html' title='resolve::config::default_config'>default_config</a>, <a class='struct' href='../resolve/config/struct.DnsConfig.html' title='resolve::config::DnsConfig'>DnsConfig</a>};</code></td></tr><tr><td><code>pub use idna::{<a class='fn' href='../resolve/idna/fn.to_ascii.html' title='resolve::idna::to_ascii'>to_ascii</a>, <a class='fn' href='../resolve/idna/fn.to_unicode.html' title='resolve::idna::to_unicode'>to_unicode</a>};</code></td></tr><tr><td><code>pub use message::{<a class='enum' href='../resolve/message/enum.DecodeError.html' title='resolve::message::DecodeError'>DecodeError</a>, <a class='enum' href='../resolve/message/enum.EncodeError.html' title='resolve::message::EncodeError'>EncodeError</a>, <a class='struct' href='../resolve/message/struct.Message.html' title='resolve::message::Message'>Message</a>, <a class='struct' href='../resolve/message/struct.Question.html' title='resolve::message::Question'>Question</a>, <a class='struct' href='../resolve/message/struct.Resource.html' title='resolve::message::Resource'>Resource</a>, MESSAGE_LIMIT};</code></td></tr><tr><td><code>pub use record::{<a class='enum' href='../resolve/record/enum.Class.html' title='resolve::record::Class'>Class</a>, <a class='trait' href='../resolve/record/trait.Record.html' title='resolve::record::Record'>Record</a>, <a class='enum' href='../resolve/record/enum.RecordType.html' title='resolve::record::RecordType'>RecordType</a>};</code></td></tr><tr><td><code>pub use resolver::{<a class='fn' href='../resolve/resolver/fn.resolve_addr.html' title='resolve::resolver::resolve_addr'>resolve_addr</a>, <a class='fn' href='../resolve/resolver/fn.resolve_host.html' title='resolve::resolver::resolve_host'>resolve_host</a>, <a class='struct' href='../resolve/resolver/struct.DnsResolver.html' title='resolve::resolver::DnsResolver'>DnsResolver</a>};</code></td></tr><tr><td><code>pub use socket::{<a class='struct' href='../resolve/socket/struct.DnsSocket.html' title='resolve::socket::DnsSocket'>DnsSocket</a>, <a class='enum' href='../resolve/socket/enum.Error.html' title='resolve::socket::Error'>Error</a>};</code></td></tr></table><h2 id='modules' class='section-header'><a href="#modules">Modules</a></h2>
+<table>
+                       <tr class=' module-item'>
+                           <td><a class='mod' href='address/index.html'
+                                  title='resolve::address'>address</a></td>
+                           <td class='docblock short'>
+                                <p>IP address utility functions</p>
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='mod' href='config/index.html'
+                                  title='resolve::config'>config</a></td>
+                           <td class='docblock short'>
+                                <p>DNS resolver configuration</p>
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='mod' href='hostname/index.html'
+                                  title='resolve::hostname'>hostname</a></td>
+                           <td class='docblock short'>
+                                <p>System hostname detection</p>
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='mod' href='hosts/index.html'
+                                  title='resolve::hosts'>hosts</a></td>
+                           <td class='docblock short'>
+                                <p>Implements parsing the system hosts file to produce a host table</p>
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='mod' href='idna/index.html'
+                                  title='resolve::idna'>idna</a></td>
+                           <td class='docblock short'>
+                                <p>Implements RFC 3490, Internationalized Domain Names in Applications,
+encoding for domain name labels containing Unicode.</p>
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='mod' href='message/index.html'
+                                  title='resolve::message'>message</a></td>
+                           <td class='docblock short'>
+                                <p>Utilities for composing, decoding, and encoding messages.</p>
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='mod' href='record/index.html'
+                                  title='resolve::record'>record</a></td>
+                           <td class='docblock short'>
+                                <p>DNS resource record types</p>
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='mod' href='resolv_conf/index.html'
+                                  title='resolve::resolv_conf'>resolv_conf</a></td>
+                           <td class='docblock short'>
+                                <p>Partial Unix <code>resolv.conf(5)</code> parser</p>
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='mod' href='resolver/index.html'
+                                  title='resolve::resolver'>resolver</a></td>
+                           <td class='docblock short'>
+                                <p>High-level resolver operations</p>
+                           </td>
+                       </tr>
+                       <tr class=' module-item'>
+                           <td><a class='mod' href='socket/index.html'
+                                  title='resolve::socket'>socket</a></td>
+                           <td class='docblock short'>
+                                <p>Low-level UDP socket operations</p>
+                           </td>
+                       </tr></table></section>
+    <section id='search' class="content hidden"></section>
+
+    <section class="footer"></section>
+
+    <aside id="help" class="hidden">
+        <div>
+            <h1 class="hidden">Help</h1>
+
+            <div class="shortcuts">
+                <h2>Keyboard Shortcuts</h2>
+
+                <dl>
+                    <dt>?</dt>
+                    <dd>Show this help dialog</dd>
+                    <dt>S</dt>
+                    <dd>Focus the search field</dd>
+                    <dt>&larrb;</dt>
+                    <dd>Move up in search results</dd>
+                    <dt>&rarrb;</dt>
+                    <dd>Move down in search results</dd>
+                    <dt>&#9166;</dt>
+                    <dd>Go to active search result</dd>
+                </dl>
+            </div>
+
+            <div class="infos">
+                <h2>Search Tricks</h2>
+
+                <p>
+                    Prefix searches with a type followed by a colon (e.g.
+                    <code>fn:</code>) to restrict the search to a given type.
+                </p>
+
+                <p>
+                    Accepted types are: <code>fn</code>, <code>mod</code>,
+                    <code>struct</code>, <code>enum</code>,
+                    <code>trait</code>, <code>type</code>, <code>macro</code>,
+                    and <code>const</code>.
+                </p>
+
+                <p>
+                    Search functions by type signature (e.g.
+                    <code>vec -> usize</code> or <code>* -> vec</code>)
+                </p>
+            </div>
+        </div>
+    </aside>
+
+    
+
+    <script>
+        window.rootPath = "../";
+        window.currentCrate = "resolve";
+        window.playgroundUrl = "";
+    </script>
+    <script src="../jquery.js"></script>
+    <script src="../main.js"></script>
+    
+    <script defer src="../search-index.js"></script>
+</body>
+</html>

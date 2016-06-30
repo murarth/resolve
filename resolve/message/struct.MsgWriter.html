@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="generator" content="rustdoc">
+    <meta name="description" content="API documentation for the Rust `MsgWriter` struct in crate `resolve`.">
+    <meta name="keywords" content="rust, rustlang, rust-lang, MsgWriter">
+
+    <title>resolve::message::MsgWriter - Rust</title>
+
+    <link rel="stylesheet" type="text/css" href="../../rustdoc.css">
+    <link rel="stylesheet" type="text/css" href="../../main.css">
+    
+
+    
+    
+</head>
+<body class="rustdoc">
+    <!--[if lte IE 8]>
+    <div class="warning">
+        This old browser is unsupported and will most likely display funky
+        things.
+    </div>
+    <![endif]-->
+
+    
+
+    <nav class="sidebar">
+        
+        <p class='location'><a href='../index.html'>resolve</a>::<wbr><a href='index.html'>message</a></p><script>window.sidebarCurrent = {name: 'MsgWriter', ty: 'struct', relpath: ''};</script><script defer src="sidebar-items.js"></script>
+    </nav>
+
+    <nav class="sub">
+        <form class="search-form js-only">
+            <div class="search-container">
+                <input class="search-input" name="search"
+                       autocomplete="off"
+                       placeholder="Click or press ‘S’ to search, ‘?’ for more options…"
+                       type="search">
+            </div>
+        </form>
+    </nav>
+
+    <section id='main' class="content struct">
+<h1 class='fqn'><span class='in-band'>Struct <a href='../index.html'>resolve</a>::<wbr><a href='index.html'>message</a>::<wbr><a class='struct' href=''>MsgWriter</a></span><span class='out-of-band'><span id='render-detail'>
+                   <a id="toggle-all-docs" href="javascript:void(0)" title="collapse all docs">
+                       [<span class='inner'>&#x2212;</span>]
+                   </a>
+               </span><a id='src-487' class='srclink' href='../../src/resolve/src/message.rs.html#383-385' title='goto source code'>[src]</a></span></h1>
+<pre class='rust struct'>pub struct MsgWriter&lt;'a&gt; {
+    // some fields omitted
+}</pre><div class='docblock'><p>Writes a single DNS message as a series of bytes.</p>
+</div><h2 id='methods'>Methods</h2><h3 class='impl'><code>impl&lt;'a&gt; <a class='struct' href='../../resolve/message/struct.MsgWriter.html' title='resolve::message::MsgWriter'>MsgWriter</a>&lt;'a&gt;</code></h3><div class='impl-items'><h4 id='method.new' class='method'><code>fn <a href='#method.new' class='fnname'>new</a>(data: <a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.slice.html'>&amp;mut [</a><a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.u8.html'>u8</a><a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.slice.html'>]</a>) -&gt; <a class='struct' href='../../resolve/message/struct.MsgWriter.html' title='resolve::message::MsgWriter'>MsgWriter</a></code></h4>
+<div class='docblock'><p>Constructs a new message writer that will write into the given byte slice.</p>
+</div><h4 id='method.written' class='method'><code>fn <a href='#method.written' class='fnname'>written</a>(&amp;self) -&gt; <a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.usize.html'>usize</a></code></h4>
+<div class='docblock'><p>Returns the number of bytes written so far.</p>
+</div><h4 id='method.into_bytes' class='method'><code>fn <a href='#method.into_bytes' class='fnname'>into_bytes</a>(self) -&gt; <a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.slice.html'>&amp;'a [</a><a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.u8.html'>u8</a><a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.slice.html'>]</a></code></h4>
+<div class='docblock'><p>Returns a subslice of the wrapped byte slice that contains only the
+bytes written.</p>
+</div><h4 id='method.write' class='method'><code>fn <a href='#method.write' class='fnname'>write</a>(&amp;mut self, data: <a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.slice.html'>&amp;[</a><a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.u8.html'>u8</a><a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.slice.html'>]</a>) -&gt; <a class='enum' href='https://doc.rust-lang.org/nightly/core/result/enum.Result.html' title='core::result::Result'>Result</a>&lt;<a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.tuple.html'>()</a>, <a class='enum' href='../../resolve/message/enum.EncodeError.html' title='resolve::message::EncodeError'>EncodeError</a>&gt;</code></h4>
+<div class='docblock'><p>Writes a series of bytes to the message. Returns <code>Err(TooLong)</code> if the
+whole buffer cannot be written.</p>
+</div><h4 id='method.write_character_string' class='method'><code>fn <a href='#method.write_character_string' class='fnname'>write_character_string</a>(&amp;mut self, data: <a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.slice.html'>&amp;[</a><a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.u8.html'>u8</a><a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.slice.html'>]</a>) -&gt; <a class='enum' href='https://doc.rust-lang.org/nightly/core/result/enum.Result.html' title='core::result::Result'>Result</a>&lt;<a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.tuple.html'>()</a>, <a class='enum' href='../../resolve/message/enum.EncodeError.html' title='resolve::message::EncodeError'>EncodeError</a>&gt;</code></h4>
+<div class='docblock'><p>Write a character string, as defined by RFC 1035.</p>
+</div><h4 id='method.write_name' class='method'><code>fn <a href='#method.write_name' class='fnname'>write_name</a>(&amp;mut self, name: &amp;<a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.str.html'>str</a>) -&gt; <a class='enum' href='https://doc.rust-lang.org/nightly/core/result/enum.Result.html' title='core::result::Result'>Result</a>&lt;<a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.tuple.html'>()</a>, <a class='enum' href='../../resolve/message/enum.EncodeError.html' title='resolve::message::EncodeError'>EncodeError</a>&gt;</code></h4>
+<div class='docblock'><p>Writes a name to the message.</p>
+</div><h4 id='method.write_byte' class='method'><code>fn <a href='#method.write_byte' class='fnname'>write_byte</a>(&amp;mut self, data: <a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.u8.html'>u8</a>) -&gt; <a class='enum' href='https://doc.rust-lang.org/nightly/core/result/enum.Result.html' title='core::result::Result'>Result</a>&lt;<a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.tuple.html'>()</a>, <a class='enum' href='../../resolve/message/enum.EncodeError.html' title='resolve::message::EncodeError'>EncodeError</a>&gt;</code></h4>
+<div class='docblock'><p>Writes a single byte to the message.</p>
+</div><h4 id='method.write_u16' class='method'><code>fn <a href='#method.write_u16' class='fnname'>write_u16</a>(&amp;mut self, data: <a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.u16.html'>u16</a>) -&gt; <a class='enum' href='https://doc.rust-lang.org/nightly/core/result/enum.Result.html' title='core::result::Result'>Result</a>&lt;<a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.tuple.html'>()</a>, <a class='enum' href='../../resolve/message/enum.EncodeError.html' title='resolve::message::EncodeError'>EncodeError</a>&gt;</code></h4>
+<div class='docblock'><p>Writes an unsigned 16 bit integer in big-endian format.</p>
+</div><h4 id='method.write_u32' class='method'><code>fn <a href='#method.write_u32' class='fnname'>write_u32</a>(&amp;mut self, data: <a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.u32.html'>u32</a>) -&gt; <a class='enum' href='https://doc.rust-lang.org/nightly/core/result/enum.Result.html' title='core::result::Result'>Result</a>&lt;<a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.tuple.html'>()</a>, <a class='enum' href='../../resolve/message/enum.EncodeError.html' title='resolve::message::EncodeError'>EncodeError</a>&gt;</code></h4>
+<div class='docblock'><p>Writes an unsigned 32 bit integer in big-endian format.</p>
+</div></div></section>
+    <section id='search' class="content hidden"></section>
+
+    <section class="footer"></section>
+
+    <aside id="help" class="hidden">
+        <div>
+            <h1 class="hidden">Help</h1>
+
+            <div class="shortcuts">
+                <h2>Keyboard Shortcuts</h2>
+
+                <dl>
+                    <dt>?</dt>
+                    <dd>Show this help dialog</dd>
+                    <dt>S</dt>
+                    <dd>Focus the search field</dd>
+                    <dt>&larrb;</dt>
+                    <dd>Move up in search results</dd>
+                    <dt>&rarrb;</dt>
+                    <dd>Move down in search results</dd>
+                    <dt>&#9166;</dt>
+                    <dd>Go to active search result</dd>
+                </dl>
+            </div>
+
+            <div class="infos">
+                <h2>Search Tricks</h2>
+
+                <p>
+                    Prefix searches with a type followed by a colon (e.g.
+                    <code>fn:</code>) to restrict the search to a given type.
+                </p>
+
+                <p>
+                    Accepted types are: <code>fn</code>, <code>mod</code>,
+                    <code>struct</code>, <code>enum</code>,
+                    <code>trait</code>, <code>type</code>, <code>macro</code>,
+                    and <code>const</code>.
+                </p>
+
+                <p>
+                    Search functions by type signature (e.g.
+                    <code>vec -> usize</code> or <code>* -> vec</code>)
+                </p>
+            </div>
+        </div>
+    </aside>
+
+    
+
+    <script>
+        window.rootPath = "../../";
+        window.currentCrate = "resolve";
+        window.playgroundUrl = "";
+    </script>
+    <script src="../../jquery.js"></script>
+    <script src="../../main.js"></script>
+    
+    <script defer src="../../search-index.js"></script>
+</body>
+</html>

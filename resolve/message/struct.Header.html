@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="generator" content="rustdoc">
+    <meta name="description" content="API documentation for the Rust `Header` struct in crate `resolve`.">
+    <meta name="keywords" content="rust, rustlang, rust-lang, Header">
+
+    <title>resolve::message::Header - Rust</title>
+
+    <link rel="stylesheet" type="text/css" href="../../rustdoc.css">
+    <link rel="stylesheet" type="text/css" href="../../main.css">
+    
+
+    
+    
+</head>
+<body class="rustdoc">
+    <!--[if lte IE 8]>
+    <div class="warning">
+        This old browser is unsupported and will most likely display funky
+        things.
+    </div>
+    <![endif]-->
+
+    
+
+    <nav class="sidebar">
+        
+        <p class='location'><a href='../index.html'>resolve</a>::<wbr><a href='index.html'>message</a></p><script>window.sidebarCurrent = {name: 'Header', ty: 'struct', relpath: ''};</script><script defer src="sidebar-items.js"></script>
+    </nav>
+
+    <nav class="sub">
+        <form class="search-form js-only">
+            <div class="search-container">
+                <input class="search-input" name="search"
+                       autocomplete="off"
+                       placeholder="Click or press ‘S’ to search, ‘?’ for more options…"
+                       type="search">
+            </div>
+        </form>
+    </nav>
+
+    <section id='main' class="content struct">
+<h1 class='fqn'><span class='in-band'>Struct <a href='../index.html'>resolve</a>::<wbr><a href='index.html'>message</a>::<wbr><a class='struct' href=''>Header</a></span><span class='out-of-band'><span id='render-detail'>
+                   <a id="toggle-all-docs" href="javascript:void(0)" title="collapse all docs">
+                       [<span class='inner'>&#x2212;</span>]
+                   </a>
+               </span><a id='src-734' class='srclink' href='../../src/resolve/src/message.rs.html#759-779' title='goto source code'>[src]</a></span></h1>
+<pre class='rust struct'>pub struct Header {
+    pub id: <a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.u16.html'>u16</a>,
+    pub qr: <a class='enum' href='../../resolve/message/enum.Qr.html' title='resolve::message::Qr'>Qr</a>,
+    pub op: <a class='enum' href='../../resolve/message/enum.OpCode.html' title='resolve::message::OpCode'>OpCode</a>,
+    pub authoritative: <a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.bool.html'>bool</a>,
+    pub truncated: <a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.bool.html'>bool</a>,
+    pub recursion_desired: <a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.bool.html'>bool</a>,
+    pub recursion_available: <a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.bool.html'>bool</a>,
+    pub rcode: <a class='enum' href='../../resolve/message/enum.RCode.html' title='resolve::message::RCode'>RCode</a>,
+}</pre><div class='docblock'><p>Represents a message header.</p>
+</div><h2 class='fields'>Fields</h2>
+<table><tr class='stab '>
+                             <td id='structfield.id'><code>id</code></td><td><div class='docblock'><p>Transaction ID; corresponding replies will have the same ID.</p>
+</div></td></tr><tr class='stab '>
+                             <td id='structfield.qr'><code>qr</code></td><td><div class='docblock'><p>Query or response</p>
+</div></td></tr><tr class='stab '>
+                             <td id='structfield.op'><code>op</code></td><td><div class='docblock'><p>Kind of query</p>
+</div></td></tr><tr class='stab '>
+                             <td id='structfield.authoritative'><code>authoritative</code></td><td><div class='docblock'><p>In a response, indicates that the responding name server is an authority
+for the domain name in question section.</p>
+</div></td></tr><tr class='stab '>
+                             <td id='structfield.truncated'><code>truncated</code></td><td><div class='docblock'><p>Indicates whether the message was truncated due to length greater than
+that permitted on the transmission channel.</p>
+</div></td></tr><tr class='stab '>
+                             <td id='structfield.recursion_desired'><code>recursion_desired</code></td><td><div class='docblock'><p>In a query, directs the name server to pursue the query recursively.</p>
+</div></td></tr><tr class='stab '>
+                             <td id='structfield.recursion_available'><code>recursion_available</code></td><td><div class='docblock'><p>In a response, indicates whether recursive queries are available on the
+name server.</p>
+</div></td></tr><tr class='stab '>
+                             <td id='structfield.rcode'><code>rcode</code></td><td><div class='docblock'><p>Response code</p>
+</div></td></tr></table><h2 id='methods'>Methods</h2><h3 class='impl'><code>impl <a class='struct' href='../../resolve/message/struct.Header.html' title='resolve::message::Header'>Header</a></code></h3><div class='impl-items'><h4 id='method.new' class='method'><code>fn <a href='#method.new' class='fnname'>new</a>() -&gt; <a class='struct' href='../../resolve/message/struct.Header.html' title='resolve::message::Header'>Header</a></code></h4>
+<div class='docblock'><p>Constructs a new <code>Header</code> with a random id value.</p>
+</div><h4 id='method.with_id' class='method'><code>fn <a href='#method.with_id' class='fnname'>with_id</a>(id: <a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.u16.html'>u16</a>) -&gt; <a class='struct' href='../../resolve/message/struct.Header.html' title='resolve::message::Header'>Header</a></code></h4>
+<div class='docblock'><p>Constructs a new <code>Header</code> with the given id value.</p>
+</div></div><h2 id='implementations'>Trait Implementations</h2><h3 class='impl'><code>impl <a class='trait' href='https://doc.rust-lang.org/nightly/core/default/trait.Default.html' title='core::default::Default'>Default</a> for <a class='struct' href='../../resolve/message/struct.Header.html' title='resolve::message::Header'>Header</a></code></h3><div class='impl-items'><h4 id='method.default' class='method'><code>fn <a href='https://doc.rust-lang.org/nightly/core/default/trait.Default.html#tymethod.default' class='fnname'>default</a>() -&gt; <a class='struct' href='../../resolve/message/struct.Header.html' title='resolve::message::Header'>Header</a></code></h4>
+</div><h3 id='derived_implementations'>Derived Implementations </h3><h3 class='impl'><code>impl <a class='trait' href='https://doc.rust-lang.org/nightly/core/cmp/trait.PartialEq.html' title='core::cmp::PartialEq'>PartialEq</a> for <a class='struct' href='../../resolve/message/struct.Header.html' title='resolve::message::Header'>Header</a></code></h3><div class='impl-items'><h4 id='method.eq' class='method'><code>fn <a href='https://doc.rust-lang.org/nightly/core/cmp/trait.PartialEq.html#tymethod.eq' class='fnname'>eq</a>(&amp;self, __arg_0: &amp;<a class='struct' href='../../resolve/message/struct.Header.html' title='resolve::message::Header'>Header</a>) -&gt; <a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.bool.html'>bool</a></code></h4>
+<h4 id='method.ne' class='method'><code>fn <a href='https://doc.rust-lang.org/nightly/core/cmp/trait.PartialEq.html#method.ne' class='fnname'>ne</a>(&amp;self, __arg_0: &amp;<a class='struct' href='../../resolve/message/struct.Header.html' title='resolve::message::Header'>Header</a>) -&gt; <a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.bool.html'>bool</a></code></h4>
+</div><h3 class='impl'><code>impl <a class='trait' href='https://doc.rust-lang.org/nightly/core/cmp/trait.Eq.html' title='core::cmp::Eq'>Eq</a> for <a class='struct' href='../../resolve/message/struct.Header.html' title='resolve::message::Header'>Header</a></code></h3><div class='impl-items'></div><h3 class='impl'><code>impl <a class='trait' href='https://doc.rust-lang.org/nightly/core/fmt/trait.Debug.html' title='core::fmt::Debug'>Debug</a> for <a class='struct' href='../../resolve/message/struct.Header.html' title='resolve::message::Header'>Header</a></code></h3><div class='impl-items'><h4 id='method.fmt' class='method'><code>fn <a href='https://doc.rust-lang.org/nightly/core/fmt/trait.Debug.html#tymethod.fmt' class='fnname'>fmt</a>(&amp;self, __arg_0: &amp;mut <a class='struct' href='https://doc.rust-lang.org/nightly/core/fmt/struct.Formatter.html' title='core::fmt::Formatter'>Formatter</a>) -&gt; <a class='type' href='https://doc.rust-lang.org/nightly/core/fmt/type.Result.html' title='core::fmt::Result'>Result</a></code></h4>
+</div><h3 class='impl'><code>impl <a class='trait' href='https://doc.rust-lang.org/nightly/core/clone/trait.Clone.html' title='core::clone::Clone'>Clone</a> for <a class='struct' href='../../resolve/message/struct.Header.html' title='resolve::message::Header'>Header</a></code></h3><div class='impl-items'><h4 id='method.clone' class='method'><code>fn <a href='https://doc.rust-lang.org/nightly/core/clone/trait.Clone.html#tymethod.clone' class='fnname'>clone</a>(&amp;self) -&gt; <a class='struct' href='../../resolve/message/struct.Header.html' title='resolve::message::Header'>Header</a></code></h4>
+<h4 id='method.clone_from' class='method'><span class="since">1.0.0</span><code>fn <a href='https://doc.rust-lang.org/nightly/core/clone/trait.Clone.html#method.clone_from' class='fnname'>clone_from</a>(&amp;mut self, source: &amp;Self)</code></h4>
+</div><h3 class='impl'><code>impl <a class='trait' href='https://doc.rust-lang.org/nightly/core/marker/trait.Copy.html' title='core::marker::Copy'>Copy</a> for <a class='struct' href='../../resolve/message/struct.Header.html' title='resolve::message::Header'>Header</a></code></h3><div class='impl-items'></div></section>
+    <section id='search' class="content hidden"></section>
+
+    <section class="footer"></section>
+
+    <aside id="help" class="hidden">
+        <div>
+            <h1 class="hidden">Help</h1>
+
+            <div class="shortcuts">
+                <h2>Keyboard Shortcuts</h2>
+
+                <dl>
+                    <dt>?</dt>
+                    <dd>Show this help dialog</dd>
+                    <dt>S</dt>
+                    <dd>Focus the search field</dd>
+                    <dt>&larrb;</dt>
+                    <dd>Move up in search results</dd>
+                    <dt>&rarrb;</dt>
+                    <dd>Move down in search results</dd>
+                    <dt>&#9166;</dt>
+                    <dd>Go to active search result</dd>
+                </dl>
+            </div>
+
+            <div class="infos">
+                <h2>Search Tricks</h2>
+
+                <p>
+                    Prefix searches with a type followed by a colon (e.g.
+                    <code>fn:</code>) to restrict the search to a given type.
+                </p>
+
+                <p>
+                    Accepted types are: <code>fn</code>, <code>mod</code>,
+                    <code>struct</code>, <code>enum</code>,
+                    <code>trait</code>, <code>type</code>, <code>macro</code>,
+                    and <code>const</code>.
+                </p>
+
+                <p>
+                    Search functions by type signature (e.g.
+                    <code>vec -> usize</code> or <code>* -> vec</code>)
+                </p>
+            </div>
+        </div>
+    </aside>
+
+    
+
+    <script>
+        window.rootPath = "../../";
+        window.currentCrate = "resolve";
+        window.playgroundUrl = "";
+    </script>
+    <script src="../../jquery.js"></script>
+    <script src="../../main.js"></script>
+    
+    <script defer src="../../search-index.js"></script>
+</body>
+</html>

@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="generator" content="rustdoc">
+    <meta name="description" content="API documentation for the Rust `DnsSocket` struct in crate `resolve`.">
+    <meta name="keywords" content="rust, rustlang, rust-lang, DnsSocket">
+
+    <title>resolve::socket::DnsSocket - Rust</title>
+
+    <link rel="stylesheet" type="text/css" href="../../rustdoc.css">
+    <link rel="stylesheet" type="text/css" href="../../main.css">
+    
+
+    
+    
+</head>
+<body class="rustdoc">
+    <!--[if lte IE 8]>
+    <div class="warning">
+        This old browser is unsupported and will most likely display funky
+        things.
+    </div>
+    <![endif]-->
+
+    
+
+    <nav class="sidebar">
+        
+        <p class='location'><a href='../index.html'>resolve</a>::<wbr><a href='index.html'>socket</a></p><script>window.sidebarCurrent = {name: 'DnsSocket', ty: 'struct', relpath: ''};</script><script defer src="sidebar-items.js"></script>
+    </nav>
+
+    <nav class="sub">
+        <form class="search-form js-only">
+            <div class="search-container">
+                <input class="search-input" name="search"
+                       autocomplete="off"
+                       placeholder="Click or press ‘S’ to search, ‘?’ for more options…"
+                       type="search">
+            </div>
+        </form>
+    </nav>
+
+    <section id='main' class="content struct">
+<h1 class='fqn'><span class='in-band'>Struct <a href='../index.html'>resolve</a>::<wbr><a href='index.html'>socket</a>::<wbr><a class='struct' href=''>DnsSocket</a></span><span class='out-of-band'><span id='render-detail'>
+                   <a id="toggle-all-docs" href="javascript:void(0)" title="collapse all docs">
+                       [<span class='inner'>&#x2212;</span>]
+                   </a>
+               </span><a id='src-2201' class='srclink' href='../../src/resolve/src/socket.rs.html#11-13' title='goto source code'>[src]</a></span></h1>
+<pre class='rust struct'>pub struct DnsSocket {
+    // some fields omitted
+}</pre><div class='docblock'><p>Represents a socket transmitting DNS messages.</p>
+</div><h2 id='methods'>Methods</h2><h3 class='impl'><code>impl <a class='struct' href='../../resolve/socket/struct.DnsSocket.html' title='resolve::socket::DnsSocket'>DnsSocket</a></code></h3><div class='impl-items'><h4 id='method.new' class='method'><code>fn <a href='#method.new' class='fnname'>new</a>() -&gt; <a class='type' href='https://doc.rust-lang.org/nightly/std/io/error/type.Result.html' title='std::io::error::Result'>Result</a>&lt;<a class='struct' href='../../resolve/socket/struct.DnsSocket.html' title='resolve::socket::DnsSocket'>DnsSocket</a>&gt;</code></h4>
+<div class='docblock'><p>Returns a <code>DnsSocket</code>, bound to an unspecified address.</p>
+</div><h4 id='method.bind' class='method'><code>fn <a href='#method.bind' class='fnname'>bind</a>&lt;A: <a class='trait' href='https://doc.rust-lang.org/nightly/std/net/addr/trait.ToSocketAddrs.html' title='std::net::addr::ToSocketAddrs'>ToSocketAddrs</a>&gt;(addr: A) -&gt; <a class='type' href='https://doc.rust-lang.org/nightly/std/io/error/type.Result.html' title='std::io::error::Result'>Result</a>&lt;<a class='struct' href='../../resolve/socket/struct.DnsSocket.html' title='resolve::socket::DnsSocket'>DnsSocket</a>&gt;</code></h4>
+<div class='docblock'><p>Returns a <code>DnsSocket</code>, bound to the given address.</p>
+</div><h4 id='method.get' class='method'><code>fn <a href='#method.get' class='fnname'>get</a>(&amp;self) -&gt; &amp;<a class='struct' href='https://doc.rust-lang.org/nightly/std/net/udp/struct.UdpSocket.html' title='std::net::udp::UdpSocket'>UdpSocket</a></code></h4>
+<div class='docblock'><p>Returns a reference to the wrapped <code>UdpSocket</code>.</p>
+</div><h4 id='method.send_message' class='method'><code>fn <a href='#method.send_message' class='fnname'>send_message</a>&lt;A: <a class='trait' href='https://doc.rust-lang.org/nightly/std/net/addr/trait.ToSocketAddrs.html' title='std::net::addr::ToSocketAddrs'>ToSocketAddrs</a>&gt;(&amp;self, message: &amp;<a class='struct' href='../../resolve/message/struct.Message.html' title='resolve::message::Message'>Message</a>, addr: A) -&gt; <a class='enum' href='https://doc.rust-lang.org/nightly/core/result/enum.Result.html' title='core::result::Result'>Result</a>&lt;<a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.tuple.html'>()</a>, <a class='enum' href='../../resolve/socket/enum.Error.html' title='resolve::socket::Error'>Error</a>&gt;</code></h4>
+<div class='docblock'><p>Sends a message to the given address.</p>
+</div><h4 id='method.recv_from' class='method'><code>fn <a href='#method.recv_from' class='fnname'>recv_from</a>&lt;'buf&gt;(&amp;self, buf: <a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.slice.html'>&amp;'buf mut [</a><a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.u8.html'>u8</a><a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.slice.html'>]</a>) -&gt; <a class='enum' href='https://doc.rust-lang.org/nightly/core/result/enum.Result.html' title='core::result::Result'>Result</a>&lt;<a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.tuple.html'>(</a><a class='struct' href='../../resolve/message/struct.Message.html' title='resolve::message::Message'>Message</a>&lt;'buf&gt;, <a class='enum' href='https://doc.rust-lang.org/nightly/std/net/addr/enum.SocketAddr.html' title='std::net::addr::SocketAddr'>SocketAddr</a><a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.tuple.html'>)</a>, <a class='enum' href='../../resolve/socket/enum.Error.html' title='resolve::socket::Error'>Error</a>&gt;</code></h4>
+<div class='docblock'><p>Receives a message, returning the address of the sender.
+The given buffer is used to store and parse message data.</p>
+
+<p>The buffer should be exactly <code>MESSAGE_LIMIT</code> bytes in length.</p>
+</div><h4 id='method.recv_message' class='method'><code>fn <a href='#method.recv_message' class='fnname'>recv_message</a>&lt;'buf&gt;(&amp;self, addr: &amp;<a class='enum' href='https://doc.rust-lang.org/nightly/std/net/addr/enum.SocketAddr.html' title='std::net::addr::SocketAddr'>SocketAddr</a>, buf: <a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.slice.html'>&amp;'buf mut [</a><a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.u8.html'>u8</a><a class='primitive' href='https://doc.rust-lang.org/nightly/std/primitive.slice.html'>]</a>) -&gt; <a class='enum' href='https://doc.rust-lang.org/nightly/core/result/enum.Result.html' title='core::result::Result'>Result</a>&lt;<a class='enum' href='https://doc.rust-lang.org/nightly/core/option/enum.Option.html' title='core::option::Option'>Option</a>&lt;<a class='struct' href='../../resolve/message/struct.Message.html' title='resolve::message::Message'>Message</a>&lt;'buf&gt;&gt;, <a class='enum' href='../../resolve/socket/enum.Error.html' title='resolve::socket::Error'>Error</a>&gt;</code></h4>
+<div class='docblock'><p>Attempts to read a DNS message. The message will only be decoded if the
+remote address matches <code>addr</code>. If a packet is received from a non-matching
+address, the message is not decoded and <code>Ok(None)</code> is returned.</p>
+
+<p>The buffer should be exactly <code>MESSAGE_LIMIT</code> bytes in length.</p>
+</div></div></section>
+    <section id='search' class="content hidden"></section>
+
+    <section class="footer"></section>
+
+    <aside id="help" class="hidden">
+        <div>
+            <h1 class="hidden">Help</h1>
+
+            <div class="shortcuts">
+                <h2>Keyboard Shortcuts</h2>
+
+                <dl>
+                    <dt>?</dt>
+                    <dd>Show this help dialog</dd>
+                    <dt>S</dt>
+                    <dd>Focus the search field</dd>
+                    <dt>&larrb;</dt>
+                    <dd>Move up in search results</dd>
+                    <dt>&rarrb;</dt>
+                    <dd>Move down in search results</dd>
+                    <dt>&#9166;</dt>
+                    <dd>Go to active search result</dd>
+                </dl>
+            </div>
+
+            <div class="infos">
+                <h2>Search Tricks</h2>
+
+                <p>
+                    Prefix searches with a type followed by a colon (e.g.
+                    <code>fn:</code>) to restrict the search to a given type.
+                </p>
+
+                <p>
+                    Accepted types are: <code>fn</code>, <code>mod</code>,
+                    <code>struct</code>, <code>enum</code>,
+                    <code>trait</code>, <code>type</code>, <code>macro</code>,
+                    and <code>const</code>.
+                </p>
+
+                <p>
+                    Search functions by type signature (e.g.
+                    <code>vec -> usize</code> or <code>* -> vec</code>)
+                </p>
+            </div>
+        </div>
+    </aside>
+
+    
+
+    <script>
+        window.rootPath = "../../";
+        window.currentCrate = "resolve";
+        window.playgroundUrl = "";
+    </script>
+    <script src="../../jquery.js"></script>
+    <script src="../../main.js"></script>
+    
+    <script defer src="../../search-index.js"></script>
+</body>
+</html>

@@ -1,0 +1,1 @@
+initSidebarItems({"fn":[["resolve_addr","Resolves an IPv4 or IPv6 address to a hostname."],["resolve_host","Resolves a hostname to one or more IPv4 or IPv6 addresses."]],"struct":[["DnsResolver","Performs resolution operations"],["ResolveHost","Yields a series of `IpAddr` values from `resolve_host`."]]});

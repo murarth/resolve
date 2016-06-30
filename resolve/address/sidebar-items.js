@@ -1,0 +1,1 @@
+initSidebarItems({"fn":[["address_equal","Compares two `IpAddr`s, checking for IPv6-compatible or IPv6-mapped addresses."],["address_name","Returns an IP address formatted as a domain name."],["socket_address_equal","Compares two `SocketAddr`s, checking for IPv6-compatible or IPv6-mapped addresses."]]});
