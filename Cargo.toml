@@ -3,7 +3,7 @@
 name = "resolve"
 description = "DNS communication protocol"
 
-documentation = "http://murarth.github.io/resolve/resolve/index.html"
+documentation = "https://docs.rs/resolve/"
 homepage = "https://github.com/murarth/resolve"
 repository = "https://github.com/murarth/resolve"
 
