@@ -5,7 +5,7 @@
 It also provides high level facilities for hostname resolution and address
 reverse resolution.
 
-[Documentation](http://murarth.github.io/resolve/resolve/index.html)
+[Documentation](http://docs.rs/resolve/)
 
 ## Usage
 
