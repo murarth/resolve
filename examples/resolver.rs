@@ -9,8 +9,8 @@ use resolve::{DnsConfig, DnsResolver};
 fn main() {
     let config = DnsConfig::with_name_servers(vec![
         // Use Google's public DNS servers instead of the system default.
-        "8.8.8.8".parse().unwrap(),
-        "8.8.4.4".parse().unwrap(),
+        "8.8.8.8:53".parse().unwrap(),
+        "8.8.4.4:53".parse().unwrap(),
     ]);
 
     let resolver = match DnsResolver::new(config) {
