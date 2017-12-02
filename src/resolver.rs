@@ -7,7 +7,7 @@ use std::time::{Duration, Instant};
 use std::vec::IntoIter;
 
 use address::address_name;
-use config::{default_config, DnsConfig};
+use config::DnsConfig;
 use message::{Message, Qr, Question, MESSAGE_LIMIT};
 use record::{A, AAAA, Class, Ptr, Record, RecordType};
 use socket::{DnsSocket, Error};
@@ -307,7 +307,7 @@ fn with_suffixes(host: &str, suffixes: &[String]) -> Vec<String> {
 
 /// Resolves an IPv4 or IPv6 address to a hostname.
 pub fn resolve_addr(addr: &IpAddr) -> io::Result<String> {
-    let r = try!(DnsResolver::new(try!(default_config())));
+    let r = try!(DnsResolver::new(try!(DnsConfig::load_default())));
     r.resolve_addr(addr)
 }
 
@@ -327,7 +327,7 @@ pub fn resolve_addr(addr: &IpAddr) -> io::Result<String> {
 /// # }
 /// ```
 pub fn resolve_host(host: &str) -> io::Result<ResolveHost> {
-    let r = try!(DnsResolver::new(try!(default_config())));
+    let r = try!(DnsResolver::new(try!(DnsConfig::load_default())));
     r.resolve_host(host)
 }
 

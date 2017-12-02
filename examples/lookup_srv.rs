@@ -2,7 +2,7 @@ extern crate resolve;
 
 use std::env::args;
 
-use resolve::{default_config, DnsResolver};
+use resolve::{DnsConfig, DnsResolver};
 use resolve::record::Srv;
 
 fn main() {
@@ -14,7 +14,7 @@ fn main() {
         return;
     }
 
-    let config = match default_config() {
+    let config = match DnsConfig::load_default() {
         Ok(config) => config,
         Err(e) => {
             println!("failed to load system configuration: {}", e);

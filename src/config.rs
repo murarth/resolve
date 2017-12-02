@@ -26,9 +26,27 @@ pub struct DnsConfig {
     pub use_inet6: bool,
 }
 
-/// Returns the default system configuration for DNS requests.
-pub fn default_config() -> io::Result<DnsConfig> {
-    default_config_impl()
+impl DnsConfig {
+    /// Returns the default system configuration for DNS requests.
+    pub fn load_default() -> io::Result<DnsConfig> {
+        default_config_impl()
+    }
+
+    /// Returns a `DnsConfig` using the given set of name servers,
+    /// setting all other fields to generally sensible default values.
+    pub fn with_name_servers(name_servers: Vec<SocketAddr>) -> DnsConfig {
+        DnsConfig{
+            name_servers: name_servers,
+            search: Vec::new(),
+
+            n_dots: 1,
+            timeout: Duration::from_secs(5),
+            attempts: 5,
+
+            rotate: false,
+            use_inet6: false,
+        }
+    }
 }
 
 #[cfg(unix)]

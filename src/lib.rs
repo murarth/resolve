@@ -8,7 +8,7 @@ extern crate libc;
 extern crate rand;
 
 pub use address::address_name;
-pub use config::{default_config, DnsConfig};
+pub use config::DnsConfig;
 pub use idna::{to_ascii, to_unicode};
 pub use message::{DecodeError, EncodeError, Message, Question, Resource,
     MESSAGE_LIMIT};
