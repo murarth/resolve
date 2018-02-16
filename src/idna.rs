@@ -1,6 +1,7 @@
 //! Implements RFC 3490, Internationalized Domain Names in Applications,
 //! encoding for domain name labels containing Unicode.
 
+#[allow(unused_imports)]
 use std::ascii::AsciiExt;
 use std::borrow::Cow::{self, Borrowed, Owned};
 

@@ -1,5 +1,6 @@
 //! Utilities for composing, decoding, and encoding messages.
 
+#[allow(unused_imports)]
 use std::ascii::AsciiExt;
 use std::borrow::Cow::{self, Borrowed, Owned};
 use std::cell::Cell;
