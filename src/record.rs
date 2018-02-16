@@ -342,39 +342,3 @@ impl Record for Txt {
 
     fn record_type() -> RecordType { RecordType::Txt }
 }
-
-#[cfg(test)]
-mod test {
-    use super::Ns;
-
-    #[test]
-    fn test_record_eq() {
-        //! Most records should implement Eq.
-        //! Verify this with the Ns record.
-        let a = Ns { name: "example.com".into() };
-        let b = Ns { name: "example.com".into() };
-        let c = Ns { name: "example.org".into() };
-        assert!(a == b);
-        assert!(a != c);
-        assert!(b != c);
-    }
-
-    #[test]
-    fn test_record_hash() {
-        use std::hash::{Hash, SipHasher, Hasher};
-
-        let a = Ns { name: "example.com".into() };
-        let b = Ns { name: "example.com".into() };
-        let c = Ns { name: "example.org".into() };
-
-        fn hash<T: Hash>(t: &T) -> u64 {
-            let mut s = SipHasher::new();
-            t.hash(&mut s);
-            s.finish()
-        }
-
-        assert!(hash(&a) == hash(&b));
-        assert!(hash(&a) != hash(&c));
-        assert!(hash(&b) != hash(&c));
-    }
-}
