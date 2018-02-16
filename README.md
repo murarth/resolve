@@ -12,8 +12,8 @@ reverse resolution.
 Add this to your `Cargo.toml`:
 
 ```toml
-[dependencies.resolve]
-git = "https://github.com/murarth/resolve"
+[dependencies]
+resolve = "0.2"
 ```
 
 And this to your crate root:
