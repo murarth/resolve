@@ -18,7 +18,7 @@ use idna;
 use record::{Class, Record, RecordType};
 
 /// Maximum size of a DNS message, in bytes.
-pub const MESSAGE_LIMIT: usize = 512;
+pub const MESSAGE_LIMIT: usize = 0xffff;
 
 /// Maximum length of a name segment (i.e. a `.`-separated identifier).
 pub const LABEL_LIMIT: usize = 63;
@@ -1091,7 +1091,7 @@ fn to_u16(n: usize) -> Result<u16, EncodeError> {
 
 #[cfg(test)]
 mod test {
-    use super::{is_valid_name, EncodeError};
+    use super::{is_valid_name, EncodeError, MESSAGE_LIMIT};
     use super::{Header, Message, Question, Qr, OpCode, RCode};
     use super::{MsgReader, MsgWriter};
     use record::{Class, RecordType};
@@ -1227,7 +1227,7 @@ mod test {
 
     #[test]
     fn test_encode_name() {
-        let mut buf = [0; 512];
+        let mut buf = [0; MESSAGE_LIMIT];
         let mut w = MsgWriter::new(&mut buf);
 
         w.write_name(LONGEST_NAME).unwrap();
@@ -1239,7 +1239,7 @@ mod test {
         assert_eq!(r.read_name().as_ref().map(|s| &s[..]), Ok(LONGEST_NAME_DOT));
         assert_eq!(r.read_name().as_ref().map(|s| &s[..]), Ok(LONGEST_NAME_DOT));
 
-        let mut buf = [0; 512];
+        let mut buf = [0; MESSAGE_LIMIT];
         let mut w = MsgWriter::new(&mut buf);
 
         assert_eq!(w.write_name(TOO_LONG_NAME), Err(EncodeError::InvalidName));
