@@ -17,5 +17,5 @@ authors = ["Murarth <murarth@gmail.com>"]
 [dependencies]
 idna = "0.1"
 libc = "0.2"
-log = "0.3"
-rand = "0.3"
+log = "0.4"
+rand = "0.4"
