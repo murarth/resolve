@@ -24,16 +24,16 @@ pub struct DnsResolver {
 impl DnsResolver {
     /// Constructs a `DnsResolver` using the given configuration.
     pub fn new(config: DnsConfig) -> io::Result<DnsResolver> {
-        let bind = bind_addr(&config.name_servers);
-        let sock = try!(DnsSocket::bind((bind, 0)));
+        let bind = bind_addr(config.use_inet6);
+        let sock = try!(DnsSocket::bind((bind,0)));
         DnsResolver::with_sock(sock, config)
     }
 
     /// Constructs a `DnsResolver` using the given configuration and bound
     /// to the given address.
-    pub fn bind<A: ToSocketAddrs>(addr: A, config: DnsConfig) -> io::Result<DnsResolver> {
+    pub fn bind<A: ToSocketAddrs + std::fmt::Debug>(addr: A, config: DnsConfig) -> io::Result<DnsResolver> {
         let sock = try!(DnsSocket::bind(addr));
-        DnsResolver::with_sock(sock, config)
+        DnsResolver::with_sock(sock, config,)
     }
 
     fn with_sock(sock: DnsSocket, config: DnsConfig) -> io::Result<DnsResolver> {
@@ -208,7 +208,6 @@ impl DnsResolver {
         buf: &'buf mut [u8],
     ) -> Result<Message<'buf>, Error> {
         let mut last_err = None;
-
         // FIXME(rust-lang/rust#21906):
         // Workaround for mutable borrow interfering with itself.
         // The drop probably isn't necessary, but it makes me feel better.
@@ -223,48 +222,58 @@ impl DnsResolver {
                 self.config.name_servers[retries as usize % n]
             };
 
-            let mut timeout = self.config.timeout;
 
             info!("resolver sending message to {}", ns_addr);
 
-            try!(self.sock.send_message(out_msg, &ns_addr));
+            let send_message_to_addr = |buf_ptr: *mut [u8], out_msg: & Message, ns_addr: SocketAddr| {
+                let mut timeout = self.config.timeout;
+                try!(self.sock.send_message(out_msg, ns_addr));
 
-            loop {
-                try!(self.sock.get().set_read_timeout(Some(timeout)));
+                loop {
+                    try!(self.sock.get().set_read_timeout(Some(timeout)));
+                    let start = Instant::now();
 
-                // The other part of the aforementioned workaround.
-                let buf = unsafe { &mut *buf_ptr };
+                    // The other part of the aforementioned workaround.
+                    let buf = unsafe { &mut *buf_ptr };
+                    match self.sock.recv_message(&ns_addr, buf) {
+                        Ok(None) => {
+                            let passed = start.elapsed();
 
-                let start = Instant::now();
-
-                match self.sock.recv_message(&ns_addr, buf) {
-                    Ok(None) => {
-                        let passed = start.elapsed();
-
-                        // Maintain the right total timeout if we're interrupted
-                        // by irrelevant messages.
-                        if timeout < passed {
-                            timeout = Duration::from_secs(0);
-                        } else {
-                            timeout = timeout - passed;
+                            // Maintain the right total timeout if we're interrupted
+                            // by irrelevant messages.
+                            if timeout < passed {
+                                timeout = Duration::from_secs(0);
+                            } else {
+                                timeout = timeout - passed;
+                            }
+                        }
+                        Ok(Some(msg)) => {
+                            // Ignore irrelevant messages
+                            if msg.header.id == out_msg.header.id && msg.header.qr == Qr::Response {
+                                try!(msg.get_error());
+                                return Ok(msg);
+                            }
+                        }
+                        Err(e) => {
+                            return Err(e);
                         }
                     }
-                    Ok(Some(msg)) => {
-                        // Ignore irrelevant messages
-                        if msg.header.id == out_msg.header.id && msg.header.qr == Qr::Response {
-                            try!(msg.get_error());
-                            return Ok(msg);
-                        }
-                    }
-                    Err(e) => {
-                        // Retry on timeout
-                        if self.config.retry_on_socket_error || e.is_timeout() {
-                            last_err = Some(e);
-                            continue 'retry;
-                        }
+                }
+            };
 
-                        return Err(e);
+            match send_message_to_addr(buf_ptr, out_msg, ns_addr) {
+                Ok(msg) => {
+                    return Ok(msg)
+                }
+                Err(e) => {
+                    warn!("Error in resolving: {}", e);
+                    // Retry on timeout
+                    if self.config.retry_on_socket_error || e.is_timeout() {
+                        last_err = Some(e);
+                        continue 'retry;
                     }
+
+                    return Err(e);
                 }
             }
         }
@@ -279,10 +288,11 @@ impl DnsResolver {
     }
 }
 
-fn bind_addr(name_servers: &[SocketAddr]) -> IpAddr {
-    match name_servers.first() {
-        Some(&SocketAddr::V6(_)) => IpAddr::V6(Ipv6Addr::new(0, 0, 0, 0, 0, 0, 0, 0)),
-        _ => IpAddr::V4(Ipv4Addr::new(0, 0, 0, 0)),
+fn bind_addr(ipv6: bool) -> IpAddr {
+    if ipv6 {
+        Ipv6Addr::new(0, 0, 0, 0, 0, 0, 0, 0).into()
+    } else {
+        Ipv4Addr::new(0, 0, 0, 0).into()
     }
 }
 

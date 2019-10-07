@@ -22,7 +22,8 @@ impl DnsSocket {
     }
 
     /// Returns a `DnsSocket`, bound to the given address.
-    pub fn bind<A: ToSocketAddrs>(addr: A) -> io::Result<DnsSocket> {
+    pub fn bind<A: ToSocketAddrs + std::fmt::Debug>(addr: A) -> io::Result<DnsSocket> {
+        info!("Binding new DNS socket: {:?}", addr);
         Ok(DnsSocket {
             sock: try!(UdpSocket::bind(addr)),
         })
