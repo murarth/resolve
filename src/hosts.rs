@@ -38,8 +38,9 @@ impl HostTable {
     ///
     /// If no match is found, `None` is returned.
     pub fn find_host_by_name(&self, name: &str) -> Option<&Host> {
-        self.hosts.iter().find(|h| h.name == name ||
-            h.aliases.iter().any(|a| a == name))
+        self.hosts
+            .iter()
+            .find(|h| h.name == name || h.aliases.iter().any(|a| a == name))
     }
 }
 
@@ -72,7 +73,7 @@ fn host_file_impl() -> PathBuf {
         Some(root) => PathBuf::from(root).join("System32/drivers/etc/hosts"),
         // I'm not sure if this is the "correct" thing to do,
         // but it seems like a better alternative than panicking.
-        None => PathBuf::from("C:/Windows/System32/drivers/etc/hosts")
+        None => PathBuf::from("C:/Windows/System32/drivers/etc/hosts"),
     }
 }
 
@@ -103,29 +104,32 @@ pub fn parse_host_table(data: &str) -> io::Result<HostTable> {
 
         let addr_str = match words.next() {
             Some(w) => w,
-            None => continue
+            None => continue,
         };
 
         let addr = match addr_str.parse() {
             Ok(addr) => addr,
-            Err(_) => return Err(io::Error::new(io::ErrorKind::InvalidData,
-                format!("invalid address: {}", addr_str)))
+            Err(_) => {
+                return Err(io::Error::new(
+                    io::ErrorKind::InvalidData,
+                    format!("invalid address: {}", addr_str),
+                ))
+            }
         };
 
         let name = match words.next() {
             Some(w) => w,
-            None => return Err(io::Error::new(io::ErrorKind::InvalidData,
-                "missing names"))
+            None => return Err(io::Error::new(io::ErrorKind::InvalidData, "missing names")),
         };
 
-        hosts.push(Host{
+        hosts.push(Host {
             address: addr,
             name: name.to_owned(),
             aliases: words.map(|s| s.to_owned()).collect(),
         });
     }
 
-    Ok(HostTable{hosts: hosts})
+    Ok(HostTable { hosts: hosts })
 }
 
 #[cfg(test)]
@@ -139,13 +143,16 @@ mod test {
 
     #[test]
     fn test_hosts() {
-        let hosts = parse_host_table("\
+        let hosts = parse_host_table(
+            "\
 # Comment line
 127.0.0.1       localhost
 ::1             ip6-localhost
 
 192.168.10.1    foo foo.bar foo.local # Mid-line comment
-").unwrap();
+",
+        )
+        .unwrap();
 
         assert_eq!(hosts.find_address("localhost"), Some(ip("127.0.0.1")));
         assert_eq!(hosts.find_address("ip6-localhost"), Some(ip("::1")));

@@ -83,7 +83,7 @@ macro_rules! record_types {
     }
 }
 
-record_types!{
+record_types! {
     A => 1,
     AAAA => 28,
     CName => 5,
@@ -118,14 +118,18 @@ impl Record for A {
     fn decode(data: &mut MsgReader) -> Result<Self, DecodeError> {
         let mut buf = [0; 4];
         try!(data.read(&mut buf));
-        Ok(A{address: Ipv4Addr::new(buf[0], buf[1], buf[2], buf[3])})
+        Ok(A {
+            address: Ipv4Addr::new(buf[0], buf[1], buf[2], buf[3]),
+        })
     }
 
     fn encode(&self, data: &mut MsgWriter) -> Result<(), EncodeError> {
         data.write(&self.address.octets())
     }
 
-    fn record_type() -> RecordType { RecordType::A }
+    fn record_type() -> RecordType {
+        RecordType::A
+    }
 }
 
 /// An IPv6 host address
@@ -140,21 +144,32 @@ impl Record for AAAA {
         let mut buf = [0; 16];
         try!(data.read(&mut buf));
         let segments: [u16; 8] = unsafe { transmute(buf) };
-        Ok(AAAA{address: Ipv6Addr::new(
-            u16::from_be(segments[0]), u16::from_be(segments[1]),
-            u16::from_be(segments[2]), u16::from_be(segments[3]),
-            u16::from_be(segments[4]), u16::from_be(segments[5]),
-            u16::from_be(segments[6]), u16::from_be(segments[7]))})
+        Ok(AAAA {
+            address: Ipv6Addr::new(
+                u16::from_be(segments[0]),
+                u16::from_be(segments[1]),
+                u16::from_be(segments[2]),
+                u16::from_be(segments[3]),
+                u16::from_be(segments[4]),
+                u16::from_be(segments[5]),
+                u16::from_be(segments[6]),
+                u16::from_be(segments[7]),
+            ),
+        })
     }
 
     fn encode(&self, data: &mut MsgWriter) -> Result<(), EncodeError> {
         let mut segments = self.address.segments();
-        for seg in &mut segments { *seg = seg.to_be() }
+        for seg in &mut segments {
+            *seg = seg.to_be()
+        }
         let buf: [u8; 16] = unsafe { transmute(segments) };
         data.write(&buf)
     }
 
-    fn record_type() -> RecordType { RecordType::AAAA }
+    fn record_type() -> RecordType {
+        RecordType::AAAA
+    }
 }
 
 /// Canonical name for an alias
@@ -166,14 +181,18 @@ pub struct CName {
 
 impl Record for CName {
     fn decode(data: &mut MsgReader) -> Result<Self, DecodeError> {
-        Ok(CName{name: try!(data.read_name())})
+        Ok(CName {
+            name: try!(data.read_name()),
+        })
     }
 
     fn encode(&self, data: &mut MsgWriter) -> Result<(), EncodeError> {
         data.write_name(&self.name)
     }
 
-    fn record_type() -> RecordType { RecordType::CName }
+    fn record_type() -> RecordType {
+        RecordType::CName
+    }
 }
 
 /// Mail exchange data
@@ -188,7 +207,7 @@ pub struct Mx {
 
 impl Record for Mx {
     fn decode(data: &mut MsgReader) -> Result<Self, DecodeError> {
-        Ok(Mx{
+        Ok(Mx {
             preference: try!(data.read_u16()),
             exchange: try!(data.read_name()),
         })
@@ -199,7 +218,9 @@ impl Record for Mx {
         data.write_name(&self.exchange)
     }
 
-    fn record_type() -> RecordType { RecordType::Mx }
+    fn record_type() -> RecordType {
+        RecordType::Mx
+    }
 }
 
 /// Authoritative name server
@@ -211,14 +232,18 @@ pub struct Ns {
 
 impl Record for Ns {
     fn decode(data: &mut MsgReader) -> Result<Self, DecodeError> {
-        Ok(Ns{name: try!(data.read_name())})
+        Ok(Ns {
+            name: try!(data.read_name()),
+        })
     }
 
     fn encode(&self, data: &mut MsgWriter) -> Result<(), EncodeError> {
         data.write_name(&self.name)
     }
 
-    fn record_type() -> RecordType { RecordType::Ns }
+    fn record_type() -> RecordType {
+        RecordType::Ns
+    }
 }
 
 /// Domain name pointer
@@ -230,14 +255,18 @@ pub struct Ptr {
 
 impl Record for Ptr {
     fn decode(data: &mut MsgReader) -> Result<Self, DecodeError> {
-        Ok(Ptr{name: try!(data.read_name())})
+        Ok(Ptr {
+            name: try!(data.read_name()),
+        })
     }
 
     fn encode(&self, data: &mut MsgWriter) -> Result<(), EncodeError> {
         data.write_name(&self.name)
     }
 
-    fn record_type() -> RecordType { RecordType::Ptr }
+    fn record_type() -> RecordType {
+        RecordType::Ptr
+    }
 }
 
 /// Start of authority
@@ -265,7 +294,7 @@ pub struct Soa {
 
 impl Record for Soa {
     fn decode(data: &mut MsgReader) -> Result<Self, DecodeError> {
-        Ok(Soa{
+        Ok(Soa {
             mname: try!(data.read_name()),
             rname: try!(data.read_name()),
             serial: try!(data.read_u32()),
@@ -287,7 +316,9 @@ impl Record for Soa {
         Ok(())
     }
 
-    fn record_type() -> RecordType { RecordType::Soa }
+    fn record_type() -> RecordType {
+        RecordType::Soa
+    }
 }
 
 /// Service record
@@ -305,7 +336,7 @@ pub struct Srv {
 
 impl Record for Srv {
     fn decode(data: &mut MsgReader) -> Result<Self, DecodeError> {
-        Ok(Srv{
+        Ok(Srv {
             priority: try!(data.read_u16()),
             weight: try!(data.read_u16()),
             port: try!(data.read_u16()),
@@ -321,7 +352,9 @@ impl Record for Srv {
         Ok(())
     }
 
-    fn record_type() -> RecordType { RecordType::Srv }
+    fn record_type() -> RecordType {
+        RecordType::Srv
+    }
 }
 
 /// Text record
@@ -333,12 +366,16 @@ pub struct Txt {
 
 impl Record for Txt {
     fn decode(data: &mut MsgReader) -> Result<Self, DecodeError> {
-        Ok(Txt{data: try!(data.read_character_string())})
+        Ok(Txt {
+            data: try!(data.read_character_string()),
+        })
     }
 
     fn encode(&self, data: &mut MsgWriter) -> Result<(), EncodeError> {
         data.write_character_string(&self.data)
     }
 
-    fn record_type() -> RecordType { RecordType::Txt }
+    fn record_type() -> RecordType {
+        RecordType::Txt
+    }
 }

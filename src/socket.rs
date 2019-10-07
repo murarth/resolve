@@ -16,12 +16,14 @@ impl DnsSocket {
     /// Returns a `DnsSocket`, bound to an unspecified address.
     pub fn new() -> io::Result<DnsSocket> {
         DnsSocket::bind(&SocketAddr::new(
-            IpAddr::V6(Ipv6Addr::new(0, 0, 0, 0, 0, 0, 0, 0)), 0))
+            IpAddr::V6(Ipv6Addr::new(0, 0, 0, 0, 0, 0, 0, 0)),
+            0,
+        ))
     }
 
     /// Returns a `DnsSocket`, bound to the given address.
     pub fn bind<A: ToSocketAddrs>(addr: A) -> io::Result<DnsSocket> {
-        Ok(DnsSocket{
+        Ok(DnsSocket {
             sock: try!(UdpSocket::bind(addr)),
         })
     }
@@ -32,8 +34,7 @@ impl DnsSocket {
     }
 
     /// Sends a message to the given address.
-    pub fn send_message<A: ToSocketAddrs>(&self,
-            message: &Message, addr: A) -> Result<(), Error> {
+    pub fn send_message<A: ToSocketAddrs>(&self, message: &Message, addr: A) -> Result<(), Error> {
         let mut buf = [0; MESSAGE_LIMIT];
         let data = try!(message.encode(&mut buf));
         try!(self.sock.send_to(data, addr));
@@ -44,8 +45,10 @@ impl DnsSocket {
     /// The given buffer is used to store and parse message data.
     ///
     /// The buffer should be exactly `MESSAGE_LIMIT` bytes in length.
-    pub fn recv_from<'buf>(&self, buf: &'buf mut [u8])
-            -> Result<(Message<'buf>, SocketAddr), Error> {
+    pub fn recv_from<'buf>(
+        &self,
+        buf: &'buf mut [u8],
+    ) -> Result<(Message<'buf>, SocketAddr), Error> {
         let (n, addr) = try!(self.sock.recv_from(buf));
 
         let msg = try!(Message::decode(&buf[..n]));
@@ -57,8 +60,11 @@ impl DnsSocket {
     /// address, the message is not decoded and `Ok(None)` is returned.
     ///
     /// The buffer should be exactly `MESSAGE_LIMIT` bytes in length.
-    pub fn recv_message<'buf>(&self, addr: &SocketAddr, buf: &'buf mut [u8])
-            -> Result<Option<Message<'buf>>, Error> {
+    pub fn recv_message<'buf>(
+        &self,
+        addr: &SocketAddr,
+        buf: &'buf mut [u8],
+    ) -> Result<Option<Message<'buf>>, Error> {
         let (n, recv_addr) = try!(self.sock.recv_from(buf));
 
         if !socket_address_equal(&recv_addr, addr) {
@@ -89,10 +95,9 @@ impl Error {
         match *self {
             Error::IoError(ref e) => {
                 let kind = e.kind();
-                kind == io::ErrorKind::TimedOut ||
-                    kind == io::ErrorKind::WouldBlock
+                kind == io::ErrorKind::TimedOut || kind == io::ErrorKind::WouldBlock
             }
-            _ => false
+            _ => false,
         }
     }
 }

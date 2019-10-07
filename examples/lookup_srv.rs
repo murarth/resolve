@@ -2,8 +2,8 @@ extern crate resolve;
 
 use std::env::args;
 
-use resolve::{DnsConfig, DnsResolver};
 use resolve::record::Srv;
+use resolve::{DnsConfig, DnsResolver};
 
 fn main() {
     let args = args().collect::<Vec<_>>();
@@ -35,8 +35,10 @@ fn main() {
     match resolver.resolve_record::<Srv>(&name) {
         Ok(records) => {
             for srv in records {
-                println!("SRV priority={} weight={} port={} target={}",
-                    srv.priority, srv.weight, srv.port, srv.target);
+                println!(
+                    "SRV priority={} weight={} port={} target={}",
+                    srv.priority, srv.weight, srv.port, srv.target
+                );
             }
         }
         Err(e) => {

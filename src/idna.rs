@@ -31,7 +31,7 @@ pub fn to_unicode(s: &str) -> Result<Cow<str>, Error> {
     if is_unicode {
         match external_idna::domain_to_unicode(s) {
             (s, Ok(_)) => Ok(Owned(s)),
-            (_, Err(_)) => Err(Error)
+            (_, Err(_)) => Err(Error),
         }
     } else {
         Ok(Borrowed(s))

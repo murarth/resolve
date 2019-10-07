@@ -1,10 +1,10 @@
 extern crate resolve;
 
-use std::str;
 use std::env::args;
+use std::str;
 
-use resolve::{DnsConfig, DnsResolver};
 use resolve::record::Txt;
+use resolve::{DnsConfig, DnsResolver};
 
 fn main() {
     let args = args().collect::<Vec<_>>();

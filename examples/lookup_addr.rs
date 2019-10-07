@@ -25,7 +25,7 @@ fn main() {
             Ok(name) => {
                 println!("{} resolved to \"{}\"", ip, name);
             }
-            Err(e) => println!("failed to resolve {}: {}", ip, e)
+            Err(e) => println!("failed to resolve {}: {}", ip, e),
         }
     }
 }

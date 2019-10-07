@@ -40,7 +40,7 @@ fn main() {
                     println!("\"{}\" resolved to {} ({} more)", arg, addr, n);
                 }
             }
-            Err(e) => println!("failed to resolve \"{}\": {}", arg, e)
+            Err(e) => println!("failed to resolve \"{}\": {}", arg, e),
         }
     }
 }

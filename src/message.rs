@@ -84,7 +84,9 @@ pub struct MsgReader<'a> {
 impl<'a> MsgReader<'a> {
     /// Constructs a new message reader.
     pub fn new(data: &[u8]) -> MsgReader {
-        MsgReader{data: Cursor::new(data)}
+        MsgReader {
+            data: Cursor::new(data),
+        }
     }
 
     /// Constructs a new message reader, which will read from `data`,
@@ -92,7 +94,7 @@ impl<'a> MsgReader<'a> {
     pub fn with_offset(data: &[u8], offset: usize) -> MsgReader {
         let mut cur = Cursor::new(data);
         cur.set_position(offset as u64);
-        MsgReader{data: cur}
+        MsgReader { data: cur }
     }
 
     /// Returns the number of bytes remaining in the message.
@@ -254,7 +256,7 @@ impl<'a> MsgReader<'a> {
 
         let label = match idna::to_unicode(s) {
             Ok(s) => s,
-            Err(_) => return Err(DecodeError::InvalidName)
+            Err(_) => return Err(DecodeError::InvalidName),
         };
 
         buf.push_str(&label);
@@ -310,7 +312,7 @@ impl<'a> MsgReader<'a> {
         let ns_count = u16::from_be(hdr.ns_count);
         let ar_count = u16::from_be(hdr.ar_count);
 
-        Ok(FullHeader{
+        Ok(FullHeader {
             id: id,
             qr: if qr == 0 { Qr::Query } else { Qr::Response },
             op: OpCode::from_u8(op),
@@ -339,7 +341,7 @@ impl<'a> MsgReader<'a> {
         let q_type = u16::from_be(msg.q_type);
         let q_class = u16::from_be(msg.q_class);
 
-        Ok(Question{
+        Ok(Question {
             name: name,
             q_type: RecordType::from_u16(q_type),
             q_class: Class::from_u16(q_class),
@@ -367,7 +369,7 @@ impl<'a> MsgReader<'a> {
         let r_data = &data[..offset + length as usize];
         self.consume(length as u64);
 
-        Ok(Resource{
+        Ok(Resource {
             name: name,
             r_type: RecordType::from_u16(r_type),
             r_class: Class::from_u16(r_class),
@@ -386,7 +388,9 @@ pub struct MsgWriter<'a> {
 impl<'a> MsgWriter<'a> {
     /// Constructs a new message writer that will write into the given byte slice.
     pub fn new(data: &mut [u8]) -> MsgWriter {
-        MsgWriter{data: Cursor::new(data)}
+        MsgWriter {
+            data: Cursor::new(data),
+        }
     }
 
     /// Returns the number of bytes written so far.
@@ -437,7 +441,7 @@ impl<'a> MsgWriter<'a> {
             for seg in name.split('.') {
                 let seg = match idna::to_ascii(seg) {
                     Ok(seg) => seg,
-                    Err(_) => return Err(EncodeError::InvalidName)
+                    Err(_) => return Err(EncodeError::InvalidName),
                 };
 
                 if !is_valid_segment(&seg) {
@@ -581,8 +585,9 @@ fn is_valid_name(name: &str) -> bool {
 /// for basic sanity of input. If an invalid name is given, a DNS server will
 /// respond that it doesn't exist, anyway.
 fn is_valid_segment(s: &str) -> bool {
-    !(s.starts_with('-') || s.ends_with('-')) &&
-        s.chars().all(|c| !(c == '.' || c.is_whitespace() || c.is_control()))
+    !(s.starts_with('-') || s.ends_with('-'))
+        && s.chars()
+            .all(|c| !(c == '.' || c.is_whitespace() || c.is_control()))
 }
 
 /// Represents a DNS message.
@@ -604,7 +609,7 @@ pub struct Message<'a> {
 impl<'a> Message<'a> {
     /// Constructs a new `Message` with a random id value.
     pub fn new() -> Message<'a> {
-        Message{
+        Message {
             header: Header::new(),
             ..Default::default()
         }
@@ -612,7 +617,7 @@ impl<'a> Message<'a> {
 
     /// Constructs a new `Message` with the given id value.
     pub fn with_id(id: u16) -> Message<'a> {
-        Message{
+        Message {
             header: Header::with_id(id),
             ..Default::default()
         }
@@ -623,12 +628,12 @@ impl<'a> Message<'a> {
         let mut r = MsgReader::new(data);
 
         let header = try!(r.read_header());
-        let mut msg = Message{
+        let mut msg = Message {
             header: header.to_header(),
             // TODO: Cap these values to prevent abuse?
-            question:   Vec::with_capacity(header.qd_count as usize),
-            answer:     Vec::with_capacity(header.an_count as usize),
-            authority:  Vec::with_capacity(header.ns_count as usize),
+            question: Vec::with_capacity(header.qd_count as usize),
+            answer: Vec::with_capacity(header.an_count as usize),
+            authority: Vec::with_capacity(header.ns_count as usize),
             additional: Vec::with_capacity(header.ar_count as usize),
         };
 
@@ -658,7 +663,7 @@ impl<'a> Message<'a> {
         let mut w = MsgWriter::new(buf);
         let hdr = &self.header;
 
-        let header = FullHeader{
+        let header = FullHeader {
             id: hdr.id,
             qr: hdr.qr,
             op: hdr.op,
@@ -702,23 +707,23 @@ impl<'a> Message<'a> {
 
     /// Returns an iterator over the records in this message.
     pub fn records(&self) -> RecordIter {
-        RecordIter{
+        RecordIter {
             iters: [
                 self.answer.iter(),
                 self.authority.iter(),
                 self.additional.iter(),
-            ]
+            ],
         }
     }
 
     /// Consumes the message and returns an iterator over its records.
     pub fn into_records(self) -> RecordIntoIter<'a> {
-        RecordIntoIter{
+        RecordIntoIter {
             iters: [
                 self.answer.into_iter(),
                 self.authority.into_iter(),
                 self.additional.into_iter(),
-            ]
+            ],
         }
     }
 }
@@ -732,7 +737,8 @@ impl<'a> Iterator for RecordIter<'a> {
     type Item = &'a Resource<'a>;
 
     fn next(&mut self) -> Option<&'a Resource<'a>> {
-        self.iters[0].next()
+        self.iters[0]
+            .next()
             .or_else(|| self.iters[1].next())
             .or_else(|| self.iters[2].next())
     }
@@ -747,7 +753,8 @@ impl<'a> Iterator for RecordIntoIter<'a> {
     type Item = Resource<'a>;
 
     fn next(&mut self) -> Option<Resource<'a>> {
-        self.iters[0].next()
+        self.iters[0]
+            .next()
             .or_else(|| self.iters[1].next())
             .or_else(|| self.iters[2].next())
     }
@@ -780,7 +787,7 @@ pub struct Header {
 impl Header {
     /// Constructs a new `Header` with a random id value.
     pub fn new() -> Header {
-        Header{
+        Header {
             id: generate_id(),
             ..Default::default()
         }
@@ -788,7 +795,7 @@ impl Header {
 
     /// Constructs a new `Header` with the given id value.
     pub fn with_id(id: u16) -> Header {
-        Header{
+        Header {
             id: id,
             ..Default::default()
         }
@@ -797,7 +804,7 @@ impl Header {
 
 impl Default for Header {
     fn default() -> Header {
-        Header{
+        Header {
             id: 0,
             qr: Qr::Query,
             op: OpCode::Query,
@@ -829,7 +836,7 @@ struct FullHeader {
 
 impl FullHeader {
     fn to_header(&self) -> Header {
-        Header{
+        Header {
             id: self.id,
             qr: self.qr,
             op: self.op,
@@ -844,7 +851,7 @@ impl FullHeader {
 
 impl Default for FullHeader {
     fn default() -> FullHeader {
-        FullHeader{
+        FullHeader {
             id: 0,
             qr: Qr::Query,
             op: OpCode::Query,
@@ -875,7 +882,7 @@ pub struct Question {
 impl Question {
     /// Constructs a new `Question`.
     pub fn new(name: String, q_type: RecordType, q_class: Class) -> Question {
-        Question{
+        Question {
             name: name,
             q_type: q_type,
             q_class: q_class,
@@ -902,9 +909,8 @@ pub struct Resource<'a> {
 
 impl<'a> Resource<'a> {
     /// Constructs a new `Resource`.
-    pub fn new(name: String, r_type: RecordType,
-            r_class: Class, ttl: u32) -> Resource<'a> {
-        Resource{
+    pub fn new(name: String, r_type: RecordType, r_class: Class, ttl: u32) -> Resource<'a> {
+        Resource {
             name: name,
             r_type: r_type,
             r_class: r_class,
@@ -1090,7 +1096,7 @@ fn to_u16(n: usize) -> Result<u16, EncodeError> {
 #[cfg(test)]
 mod test {
     use super::{is_valid_name, EncodeError, MESSAGE_LIMIT};
-    use super::{Header, Message, Question, Qr, OpCode, RCode};
+    use super::{Header, Message, OpCode, Qr, Question, RCode};
     use super::{MsgReader, MsgWriter};
     use record::{Class, RecordType};
 
@@ -1104,21 +1110,27 @@ mod test {
 
         let bytes = w.into_bytes();
 
-        assert_eq!(bytes, &b"\
+        assert_eq!(
+            bytes,
+            &b"\
             \x0dxn--bcher-kva\x02de\x00\
             \x0exn--kxae4bafwg\x09xn--pxaix\x02gr\x00\
-            "[..]);
+            "[..]
+        );
 
         let mut r = MsgReader::new(&bytes);
 
         assert_eq!(r.read_name().as_ref().map(|s| &s[..]), Ok("bücher.de."));
-        assert_eq!(r.read_name().as_ref().map(|s| &s[..]), Ok("ουτοπία.δπθ.gr."));
+        assert_eq!(
+            r.read_name().as_ref().map(|s| &s[..]),
+            Ok("ουτοπία.δπθ.gr.")
+        );
     }
 
     #[test]
     fn test_message() {
-        let msg = Message{
-            header: Header{
+        let msg = Message {
+            header: Header {
                 id: 0xabcd,
                 qr: Qr::Query,
                 op: OpCode::Query,
@@ -1128,10 +1140,11 @@ mod test {
                 recursion_available: true,
                 rcode: RCode::NoError,
             },
-            question: vec![
-                Question::new("foo.bar.com.".to_owned(),
-                    RecordType::A, Class::Internet)
-            ],
+            question: vec![Question::new(
+                "foo.bar.com.".to_owned(),
+                RecordType::A,
+                Class::Internet,
+            )],
             answer: Vec::new(),
             authority: Vec::new(),
             additional: Vec::new(),
@@ -1140,14 +1153,13 @@ mod test {
         let mut buf = [0; 64];
         let bytes = msg.encode(&mut buf).unwrap();
 
-        assert_eq!(bytes,
-            &[0xab, 0xcd,
-                0b00000001, 0b10000000,
-                0, 1, 0, 0, 0, 0, 0, 0,
-                3, b'f', b'o', b'o',
-                3, b'b', b'a', b'r',
-                3, b'c', b'o', b'm', 0,
-                0, 1, 0, 1][..]);
+        assert_eq!(
+            bytes,
+            &[
+                0xab, 0xcd, 0b00000001, 0b10000000, 0, 1, 0, 0, 0, 0, 0, 0, 3, b'f', b'o', b'o', 3,
+                b'b', b'a', b'r', 3, b'c', b'o', b'm', 0, 0, 1, 0, 1
+            ][..]
+        );
 
         let msg2 = Message::decode(&bytes).unwrap();
 
@@ -1167,61 +1179,66 @@ mod test {
         w.write_name(".").unwrap();
 
         assert_eq!(w.write_name(""), Err(EncodeError::InvalidName));
-        assert_eq!(w.write_name(
-            "ohmyglobhowdidthisgethereiamnotgoodwithcomputerrrrrrrrrrrrrrrrrr.org"),
-            Err(EncodeError::InvalidName));
+        assert_eq!(
+            w.write_name("ohmyglobhowdidthisgethereiamnotgoodwithcomputerrrrrrrrrrrrrrrrrr.org"),
+            Err(EncodeError::InvalidName)
+        );
 
         let bytes = w.into_bytes();
 
-        assert_eq!(bytes, &b"\
+        assert_eq!(
+            bytes,
+            &b"\
             \x11\
             \x22\x33\
             \x44\x55\x66\x77\
             \x05alpha\x05bravo\x07charlie\x00\
             \x05delta\x04echo\x07foxtrot\x00\
-            \x00"[..]);
+            \x00"[..]
+        );
 
         let mut r = MsgReader::new(&bytes);
 
         assert_eq!(r.read_byte(), Ok(0x11));
         assert_eq!(r.read_u16(), Ok(0x2233));
         assert_eq!(r.read_u32(), Ok(0x44556677));
-        assert_eq!(r.read_name().as_ref().map(|s| &s[..]), Ok("alpha.bravo.charlie."));
-        assert_eq!(r.read_name().as_ref().map(|s| &s[..]), Ok("delta.echo.foxtrot."));
+        assert_eq!(
+            r.read_name().as_ref().map(|s| &s[..]),
+            Ok("alpha.bravo.charlie.")
+        );
+        assert_eq!(
+            r.read_name().as_ref().map(|s| &s[..]),
+            Ok("delta.echo.foxtrot.")
+        );
         assert_eq!(r.read_name().as_ref().map(|s| &s[..]), Ok("."));
     }
 
-    const LONGEST_NAME: &'static str =
-        "aaaaaaaaaaaaaaaaaaaaaaaa.aaaaaaaaaaaaaaaaaaaaaaaaa\
-         aaaaaaaaaaaaaaaaaaaaaaaa.aaaaaaaaaaaaaaaaaaaaaaaaa\
-         aaaaaaaaaaaaaaaaaaaaaaaa.aaaaaaaaaaaaaaaaaaaaaaaaa\
-         aaaaaaaaaaaaaaaaaaaaaaaa.aaaaaaaaaaaaaaaaaaaaaaaaa\
-         aaaaaaaaaaaaaaaaaaaaaaaa.aaaaaaaaaaaaaaaaaaaaaaaa\
-         .com";
-    const LONGEST_NAME_DOT: &'static str =
-        "aaaaaaaaaaaaaaaaaaaaaaaa.aaaaaaaaaaaaaaaaaaaaaaaaa\
-         aaaaaaaaaaaaaaaaaaaaaaaa.aaaaaaaaaaaaaaaaaaaaaaaaa\
-         aaaaaaaaaaaaaaaaaaaaaaaa.aaaaaaaaaaaaaaaaaaaaaaaaa\
-         aaaaaaaaaaaaaaaaaaaaaaaa.aaaaaaaaaaaaaaaaaaaaaaaaa\
-         aaaaaaaaaaaaaaaaaaaaaaaa.aaaaaaaaaaaaaaaaaaaaaaaa\
-         .com.";
-    const TOO_LONG_NAME: &'static str =
-        "aaaaaaaaaaaaaaaaaaaaaaaa.aaaaaaaaaaaaaaaaaaaaaaaaa\
-         aaaaaaaaaaaaaaaaaaaaaaaa.aaaaaaaaaaaaaaaaaaaaaaaaa\
-         aaaaaaaaaaaaaaaaaaaaaaaa.aaaaaaaaaaaaaaaaaaaaaaaaa\
-         aaaaaaaaaaaaaaaaaaaaaaaa.aaaaaaaaaaaaaaaaaaaaaaaaa\
-         aaaaaaaaaaaaaaaaaaaaaaaa.aaaaaaaaaaaaaaaaaaaaaaaaa\
-         .com";
-    const TOO_LONG_NAME_DOT: &'static str =
-        "aaaaaaaaaaaaaaaaaaaaaaaa.aaaaaaaaaaaaaaaaaaaaaaaaa\
-         aaaaaaaaaaaaaaaaaaaaaaaa.aaaaaaaaaaaaaaaaaaaaaaaaa\
-         aaaaaaaaaaaaaaaaaaaaaaaa.aaaaaaaaaaaaaaaaaaaaaaaaa\
-         aaaaaaaaaaaaaaaaaaaaaaaa.aaaaaaaaaaaaaaaaaaaaaaaaa\
-         aaaaaaaaaaaaaaaaaaaaaaaa.aaaaaaaaaaaaaaaaaaaaaaaaa\
-         .com.";
-    const TOO_LONG_SEGMENT: &'static str =
-        "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\
-         aaaaaaaaaaaaaa.com";
+    const LONGEST_NAME: &'static str = "aaaaaaaaaaaaaaaaaaaaaaaa.aaaaaaaaaaaaaaaaaaaaaaaaa\
+                                        aaaaaaaaaaaaaaaaaaaaaaaa.aaaaaaaaaaaaaaaaaaaaaaaaa\
+                                        aaaaaaaaaaaaaaaaaaaaaaaa.aaaaaaaaaaaaaaaaaaaaaaaaa\
+                                        aaaaaaaaaaaaaaaaaaaaaaaa.aaaaaaaaaaaaaaaaaaaaaaaaa\
+                                        aaaaaaaaaaaaaaaaaaaaaaaa.aaaaaaaaaaaaaaaaaaaaaaaa\
+                                        .com";
+    const LONGEST_NAME_DOT: &'static str = "aaaaaaaaaaaaaaaaaaaaaaaa.aaaaaaaaaaaaaaaaaaaaaaaaa\
+                                            aaaaaaaaaaaaaaaaaaaaaaaa.aaaaaaaaaaaaaaaaaaaaaaaaa\
+                                            aaaaaaaaaaaaaaaaaaaaaaaa.aaaaaaaaaaaaaaaaaaaaaaaaa\
+                                            aaaaaaaaaaaaaaaaaaaaaaaa.aaaaaaaaaaaaaaaaaaaaaaaaa\
+                                            aaaaaaaaaaaaaaaaaaaaaaaa.aaaaaaaaaaaaaaaaaaaaaaaa\
+                                            .com.";
+    const TOO_LONG_NAME: &'static str = "aaaaaaaaaaaaaaaaaaaaaaaa.aaaaaaaaaaaaaaaaaaaaaaaaa\
+                                         aaaaaaaaaaaaaaaaaaaaaaaa.aaaaaaaaaaaaaaaaaaaaaaaaa\
+                                         aaaaaaaaaaaaaaaaaaaaaaaa.aaaaaaaaaaaaaaaaaaaaaaaaa\
+                                         aaaaaaaaaaaaaaaaaaaaaaaa.aaaaaaaaaaaaaaaaaaaaaaaaa\
+                                         aaaaaaaaaaaaaaaaaaaaaaaa.aaaaaaaaaaaaaaaaaaaaaaaaa\
+                                         .com";
+    const TOO_LONG_NAME_DOT: &'static str = "aaaaaaaaaaaaaaaaaaaaaaaa.aaaaaaaaaaaaaaaaaaaaaaaaa\
+                                             aaaaaaaaaaaaaaaaaaaaaaaa.aaaaaaaaaaaaaaaaaaaaaaaaa\
+                                             aaaaaaaaaaaaaaaaaaaaaaaa.aaaaaaaaaaaaaaaaaaaaaaaaa\
+                                             aaaaaaaaaaaaaaaaaaaaaaaa.aaaaaaaaaaaaaaaaaaaaaaaaa\
+                                             aaaaaaaaaaaaaaaaaaaaaaaa.aaaaaaaaaaaaaaaaaaaaaaaaa\
+                                             .com.";
+    const TOO_LONG_SEGMENT: &'static str = "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\
+                                            aaaaaaaaaaaaaa.com";
 
     #[test]
     fn test_encode_name() {
@@ -1241,8 +1258,14 @@ mod test {
         let mut w = MsgWriter::new(&mut buf);
 
         assert_eq!(w.write_name(TOO_LONG_NAME), Err(EncodeError::InvalidName));
-        assert_eq!(w.write_name(TOO_LONG_NAME_DOT), Err(EncodeError::InvalidName));
-        assert_eq!(w.write_name(TOO_LONG_SEGMENT), Err(EncodeError::InvalidName));
+        assert_eq!(
+            w.write_name(TOO_LONG_NAME_DOT),
+            Err(EncodeError::InvalidName)
+        );
+        assert_eq!(
+            w.write_name(TOO_LONG_SEGMENT),
+            Err(EncodeError::InvalidName)
+        );
     }
 
     #[test]

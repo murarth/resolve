@@ -9,7 +9,7 @@ use std::vec::IntoIter;
 use address::address_name;
 use config::DnsConfig;
 use message::{Message, Qr, Question, MESSAGE_LIMIT};
-use record::{A, AAAA, Class, Ptr, Record, RecordType};
+use record::{Class, Ptr, Record, RecordType, A, AAAA};
 use socket::{DnsSocket, Error};
 
 /// Performs resolution operations
@@ -37,7 +37,7 @@ impl DnsResolver {
     }
 
     fn with_sock(sock: DnsSocket, config: DnsConfig) -> io::Result<DnsResolver> {
-        Ok(DnsResolver{
+        Ok(DnsResolver {
             sock: sock,
             config: config,
             next_ns: Cell::new(0),
@@ -50,7 +50,10 @@ impl DnsResolver {
             let mut out_msg = self.basic_message();
 
             out_msg.question.push(Question::new(
-                address_name(addr), RecordType::Ptr, Class::Internet));
+                address_name(addr),
+                RecordType::Ptr,
+                Class::Internet,
+            ));
 
             let mut buf = [0; MESSAGE_LIMIT];
             let msg = try!(self.send_message(&out_msg, &mut buf));
@@ -66,8 +69,10 @@ impl DnsResolver {
                 }
             }
 
-            Err(Error::IoError(io::Error::new(io::ErrorKind::Other,
-                "failed to resolve address: name not found")))
+            Err(Error::IoError(io::Error::new(
+                io::ErrorKind::Other,
+                "failed to resolve address: name not found",
+            )))
         })
     }
 
@@ -81,17 +86,22 @@ impl DnsResolver {
                 info!("attempting lookup of name \"{}\"", name);
 
                 if self.config.use_inet6 {
-                    err = self.resolve_host_v6(&name,
-                        |ip| res.push(IpAddr::V6(ip))).err();
+                    err = self
+                        .resolve_host_v6(&name, |ip| res.push(IpAddr::V6(ip)))
+                        .err();
 
                     if res.is_empty() {
-                        err = err.or(self.resolve_host_v4(&name,
-                            |ip| res.push(IpAddr::V6(ip.to_ipv6_mapped()))).err());
+                        err = err.or(self
+                            .resolve_host_v4(&name, |ip| res.push(IpAddr::V6(ip.to_ipv6_mapped())))
+                            .err());
                     }
                 } else {
-                    err = self.resolve_host_v4(&name, |ip| res.push(IpAddr::V4(ip))).err();
-                    err = err.or(self.resolve_host_v6(&name,
-                        |ip| res.push(IpAddr::V6(ip))).err());
+                    err = self
+                        .resolve_host_v4(&name, |ip| res.push(IpAddr::V4(ip)))
+                        .err();
+                    err = err.or(self
+                        .resolve_host_v6(&name, |ip| res.push(IpAddr::V6(ip)))
+                        .err());
                 }
 
                 if !res.is_empty() {
@@ -101,8 +111,10 @@ impl DnsResolver {
                 if let Some(e) = err {
                     Err(e)
                 } else {
-                    Err(Error::IoError(io::Error::new(io::ErrorKind::Other,
-                        "failed to resolve host: name not found")))
+                    Err(Error::IoError(io::Error::new(
+                        io::ErrorKind::Other,
+                        "failed to resolve host: name not found",
+                    )))
                 }
             })
         })
@@ -114,7 +126,8 @@ impl DnsResolver {
             let r_ty = Rec::record_type();
             let mut msg = self.basic_message();
 
-            msg.question.push(Question::new(name.to_owned(), r_ty, Class::Internet));
+            msg.question
+                .push(Question::new(name.to_owned(), r_ty, Class::Internet));
 
             let mut buf = [0; MESSAGE_LIMIT];
             let reply = try!(self.send_message(&msg, &mut buf));
@@ -132,11 +145,16 @@ impl DnsResolver {
     }
 
     fn resolve_host_v4<F>(&self, host: &str, mut f: F) -> Result<(), Error>
-            where F: FnMut(Ipv4Addr) {
+    where
+        F: FnMut(Ipv4Addr),
+    {
         let mut out_msg = self.basic_message();
 
         out_msg.question.push(Question::new(
-            host.to_owned(), RecordType::A, Class::Internet));
+            host.to_owned(),
+            RecordType::A,
+            Class::Internet,
+        ));
 
         let mut buf = [0; MESSAGE_LIMIT];
         let msg = try!(self.send_message(&out_msg, &mut buf));
@@ -152,11 +170,16 @@ impl DnsResolver {
     }
 
     fn resolve_host_v6<F>(&self, host: &str, mut f: F) -> Result<(), Error>
-            where F: FnMut(Ipv6Addr) {
+    where
+        F: FnMut(Ipv6Addr),
+    {
         let mut out_msg = self.basic_message();
 
         out_msg.question.push(Question::new(
-            host.to_owned(), RecordType::AAAA, Class::Internet));
+            host.to_owned(),
+            RecordType::AAAA,
+            Class::Internet,
+        ));
 
         let mut buf = [0; MESSAGE_LIMIT];
         let msg = try!(self.send_message(&out_msg, &mut buf));
@@ -179,8 +202,11 @@ impl DnsResolver {
     }
 
     /// Sends a message to the DNS server and attempts to read a response.
-    pub fn send_message<'buf>(&self, out_msg: &Message, buf: &'buf mut [u8])
-            -> Result<Message<'buf>, Error> {
+    pub fn send_message<'buf>(
+        &self,
+        out_msg: &Message,
+        buf: &'buf mut [u8],
+    ) -> Result<Message<'buf>, Error> {
         let mut last_err = None;
 
         // FIXME(rust-lang/rust#21906):
@@ -225,19 +251,18 @@ impl DnsResolver {
                     }
                     Ok(Some(msg)) => {
                         // Ignore irrelevant messages
-                        if msg.header.id == out_msg.header.id &&
-                                msg.header.qr == Qr::Response {
+                        if msg.header.id == out_msg.header.id && msg.header.qr == Qr::Response {
                             try!(msg.get_error());
                             return Ok(msg);
                         }
                     }
                     Err(e) => {
                         // Retry on timeout
-                        if e.is_timeout() {
+                        if self.config.retry_on_socket_error || e.is_timeout() {
                             last_err = Some(e);
                             continue 'retry;
                         }
-                        // Immediately bail for other errors
+
                         return Err(e);
                     }
                 }
@@ -257,25 +282,30 @@ impl DnsResolver {
 fn bind_addr(name_servers: &[SocketAddr]) -> IpAddr {
     match name_servers.first() {
         Some(&SocketAddr::V6(_)) => IpAddr::V6(Ipv6Addr::new(0, 0, 0, 0, 0, 0, 0, 0)),
-        _ => IpAddr::V4(Ipv4Addr::new(0, 0, 0, 0))
+        _ => IpAddr::V4(Ipv4Addr::new(0, 0, 0, 0)),
     }
 }
 
 fn convert_error<T, F>(desc: &str, f: F) -> io::Result<T>
-        where F: FnOnce() -> Result<T, Error> {
+where
+    F: FnOnce() -> Result<T, Error>,
+{
     match f() {
         Ok(t) => Ok(t),
         Err(Error::IoError(e)) => Err(e),
         Err(e) => Err(io::Error::new(
-            io::ErrorKind::Other, format!("{}: {}", desc, e)))
+            io::ErrorKind::Other,
+            format!("{}: {}", desc, e),
+        )),
     }
 }
 
 fn query_names<F, T>(name: &str, config: &DnsConfig, mut f: F) -> Result<T, Error>
-        where F: FnMut(String) -> Result<T, Error> {
-    let use_search = !name.ends_with('.') &&
-        name.chars().filter(|&c| c == '.')
-            .count() as u32 >= config.n_dots;
+where
+    F: FnMut(String) -> Result<T, Error>,
+{
+    let use_search =
+        !name.ends_with('.') && name.chars().filter(|&c| c == '.').count() as u32 >= config.n_dots;
 
     if use_search {
         let mut err = None;
@@ -283,15 +313,17 @@ fn query_names<F, T>(name: &str, config: &DnsConfig, mut f: F) -> Result<T, Erro
         for name in with_suffixes(name, &config.search) {
             match f(name) {
                 Ok(t) => return Ok(t),
-                Err(e) => err = Some(e)
+                Err(e) => err = Some(e),
             }
         }
 
         if let Some(e) = err {
             Err(e)
         } else {
-            Err(Error::IoError(io::Error::new(io::ErrorKind::Other,
-                "failed to resolve host: name not found")))
+            Err(Error::IoError(io::Error::new(
+                io::ErrorKind::Other,
+                "failed to resolve host: name not found",
+            )))
         }
     } else {
         f(name.to_owned())
@@ -299,8 +331,10 @@ fn query_names<F, T>(name: &str, config: &DnsConfig, mut f: F) -> Result<T, Erro
 }
 
 fn with_suffixes(host: &str, suffixes: &[String]) -> Vec<String> {
-    let mut v = suffixes.iter()
-        .map(|s| format!("{}.{}", host, s)).collect::<Vec<_>>();
+    let mut v = suffixes
+        .iter()
+        .map(|s| format!("{}.{}", host, s))
+        .collect::<Vec<_>>();
     v.push(host.to_owned());
     v
 }
